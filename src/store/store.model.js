@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 // Crear el esquema de los datos
 const storeSchema = mongoose.Schema({
   xml: {
-  // Tipo de dato String, puede ser texto, numeros (como string), etc
+    // Tipo de dato String, puede ser texto, numeros (como string), etc
     type: String,
     // Es un dato requerido (no puede ir vacio, null o indefinido)
     required: true,
@@ -24,15 +24,37 @@ const storeSchema = mongoose.Schema({
     required: true,
   },
   description: String,
-  phone: String,
-  whatsapp: String,
-  facebook: String,
-  instagram: String,
-  tiktok: String,
-  messenger: String,
+  phone: {
+    type: String,
+    default: null
+  },
+  whatsapp: {
+    type: String,
+    default: null
+  },
+  facebook: {
+    type: String,
+    default: null
+  },
+  instagram: {
+    type: String,
+    default: null
+  },
+  tiktok: {
+    type: String,
+    default: null
+  },
+  messenger: {
+    type: String,
+    default: null
+  },
+  typeShippingTerms: {
+    type: String,
+    enums: ["LINK", "TEXT"],
+  },
   shippingTerms: String,
-  paymentOptions: Array,
+  paymentOptions: String,
 });
 
 // Exportar el esquema como modelo
-module.exports = mongoose.model('Store', storeSchema);
+module.exports = mongoose.model("Store", storeSchema);

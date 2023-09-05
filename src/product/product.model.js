@@ -36,7 +36,7 @@ const productSchema = mongoose.Schema({
   saleStartDate: String, // Fecha
   saleEndDate: String, // Fecha
   categories: String,
-  tags: String,
+  tags: Array,
   stock: {
     type: String,
     required: true,

@@ -1,15 +1,15 @@
 // Utilizar el modo estricto de javascript
-'use strict';
+"use strict";
 
 // Traer el servidor
-const express = require('express');
+const express = require("express");
 // Utilizar el enrutador del servidor
 const api = express.Router();
 // Utilizar el controlador
-const storeController = require('./store.controller');
+const storeController = require("./store.controller");
 
 // Declarar cada ruta
-api.get('/test', storeController.test);
-api.get('/reloadMolvuVivaldi', storeController.reloadMolvuVivaldi);
+api.post("/add-store", storeController.addStore);
+api.delete("/delete-store/:storeId", storeController.deleteStore);
 // Exportar las rutas para ser utilizadas en el app
 module.exports = api;
