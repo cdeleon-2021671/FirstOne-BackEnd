@@ -30,6 +30,9 @@ exports.addStore = async (req, res) => {
       return res.status(400).send({ message: `Store already exists in db` });
     // Agregar la tienda a la db
     const newStore = new Store(store);
+    // console.log(newStore);
+    // console.log(store);
+    // return
     await newStore.save();
     // Convertir xml
     if ((await changeXML(store.xml)) == undefined)
