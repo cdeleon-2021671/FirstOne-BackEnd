@@ -8,27 +8,14 @@ const Store = require("../store/store.model");
 // Add Products
 exports.addProducts = async (item, id) => {
   const keys = Object.keys(item);
-  const product = {
-    storeId: id,
-    urlProduct: "",
-    name: "",
-    description: "",
-    price: "",
-    salePrice: "",
-    saleStartDate: "",
-    saleEndDate: "",
-    categories: "",
-    tags: "",
-    stock: "",
-    image: "",
-  };
+  const product = {};
+  product.storeId = id;
   for (let key of keys) {
     if (key == "link" || key == "g:link") product.urlProduct = item[key][0];
     if (key.includes("title"))
       product.name = item[key][0].replace(/&quot;/g, `"`);
     if (key.includes("description"))
-      product.description = item[key][0].replace(/\r\n&nbsp;&quot+/g, "");
-    if (key.includes("description")) product.description = item[key][0];
+      product.description = item[key][0].replace(/&nbsp;+/g, "");
     if (key == "price" || key == "g:price") product.price = item[key][0];
     if (key == "g:sale_price") product.salePrice = item[key][0];
     if (key.includes("product_type"))
@@ -36,19 +23,24 @@ exports.addProducts = async (item, id) => {
     if (key.includes("availability")) product.stock = item[key][0];
     if (key.includes("image_link")) product.image = item[key][0];
   }
+  if (product.stock == "in_stock" || product.stock == "in stock")
+    product.stock = "Disponible";
+  if (product.stock == "out of stock" || product.stock == "out_of_stock")
+    product.stock = "Agotado";
+  product.tags = product.tags.map(item=> item.trim());
   const newProduct = new Product(product);
   await newProduct.save();
-};
-
-// Delete products
-exports.deleteProducts = async (store) => {
-  await Product.deleteMany({ storeId: store });
 };
 
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
+    const allProducts = await Product.find({}).populate("storeId");
+    const products = [];
+    for (let index = 0; index < allProducts.length; index += 18) {
+      const array = allProducts.slice(index, index + 18);
+      products.push(array);
+    }
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -71,7 +63,7 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// Get product by store
+// Get products by store
 exports.getProductByStore = async (req, res) => {
   try {
     const { storeId } = req.params;
@@ -95,7 +87,8 @@ const getTags = async () => {
         allTags.push(e.trim());
       });
     });
-    const result = Array.from(new Set(allTags));
+    const newAllTags = allTags.filter((item) => item != "Home");
+    const result = Array.from(new Set(newAllTags));
     return result;
   } catch (err) {
     console.log(err);
@@ -145,6 +138,60 @@ exports.getAutoComplete = async (req, res) => {
   }
 };
 
+// traer todas las etiquetas con un producto sin repetir
+exports.getProductsOfTags = async (req, res) => {
+  try {
+    const tags = await getTags();
+    let allProducts = await Promise.all(
+      tags.map(async (item) => {
+        const elements = await Product.find({
+          tags: {
+            $in: new RegExp(item, "i"),
+          },
+        });
+        return { tag: item, products: elements };
+      })
+    );
+    const result = [];
+    for (const key1 in allProducts) {
+      for (const key2 in allProducts[key1].products) {
+        if (result.length != 0) {
+          let repeat = 0;
+          for (const product of result) {
+            if (
+              product.product._id.toString() !==
+              allProducts[key1].products[key2]._id.toString()
+            )
+              repeat++;
+          }
+          if (repeat == result.length) {
+            result.push({
+              tag: tags[key1],
+              product: allProducts[key1].products[key2],
+            });
+            break;
+          }
+        } else {
+          result.push({
+            tag: tags[key1],
+            product: allProducts[key1].products[key2],
+          });
+          break;
+        }
+      }
+    }
+    const allTags = [];
+    for (let index = 0; index < result.length; index += 14) {
+      const newTags = result.slice(index, index + 14);
+      allTags.push(newTags);
+    }
+    return res.send({ allTags });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting tags" });
+  }
+};
+
 // Search products
 const stopWord = require("stopword");
 const axios = require("axios");
@@ -154,12 +201,13 @@ exports.searchProducts = async (req, res) => {
     const { search } = req.body;
     let result = await Product.find({
       tags: {
-        $in: new RegExp(search, 'i'),
+        $in: new RegExp(search, "i"),
       },
     });
-    if(result == 0) result = await Product.find({
-      name: new RegExp(search, 'i')
-    })
+    if (result == 0)
+      result = await Product.find({
+        name: new RegExp(search, "i"),
+      });
     return res.send({ result });
   } catch (err) {
     console.log(err);

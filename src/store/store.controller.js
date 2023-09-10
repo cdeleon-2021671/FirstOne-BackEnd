@@ -2,14 +2,10 @@
 "use strict";
 
 const Store = require("./store.model"); // Traer el modelo Store
-const {
-  addProducts,
-  deleteProducts,
-} = require("../product/product.controller");
-const { changeXML } = require("../utils/validate"); // Trear la función de convertir xml
-
+const Product = require("../product/product.model");
+const { addProducts } = require("../product/product.controller");
 const axios = require("axios");
-const x2js = require("x2js");
+const xml2js = require("xml2js");
 
 // Add Store
 exports.addStore = async (req, res) => {
@@ -28,17 +24,19 @@ exports.addStore = async (req, res) => {
     });
     if (alreadyStore)
       return res.status(400).send({ message: `Store already exists in db` });
+    // Convertir xml
+    const { data } = await axios.get(store.xml);
+    const parser = new xml2js.Parser({
+      normalize: true,
+      explicitRoot: false,
+      ignoreAttrs: true,
+    });
+    const { channel } = await parser.parseStringPromise(data);
     // Agregar la tienda a la db
     const newStore = new Store(store);
-    // console.log(newStore);
-    // console.log(store);
-    // return
     await newStore.save();
-    // Convertir xml
-    if ((await changeXML(store.xml)) == undefined)
-      return res.status(400).send({ message: "XML is wrong" });
-    const { item } = await changeXML(store.xml);
     // Agregar los productos a la db
+    const {item} = channel[0];
     item.forEach((index) => {
       addProducts(index, newStore._id);
     });
@@ -61,7 +59,7 @@ exports.deleteStore = async (req, res) => {
     if (!storeExists)
       return res.status(404).send({ message: "Store not found" });
     // Eliminar los productos de la db
-    deleteProducts(storeId);
+    await Product.deleteMany({ storeId: storeId });
     // Eliminar la tienda de la db
     await Store.findOneAndDelete({ _id: storeId });
     return res.send({ message: "Store deleted successfully" });
@@ -70,3 +68,13 @@ exports.deleteStore = async (req, res) => {
     return "Error deleting store";
   }
 };
+
+// Get Stores
+exports.getStores = async(req, res)=>{
+  try {
+    const stores = await Store.find({});
+    return res.send({stores})
+  } catch (err) {
+    console.log(err);
+  }
+}

@@ -19,6 +19,14 @@ const storeSchema = mongoose.Schema({
     required: true,
     unique: true,
   },
+  urlLogo: {
+    type: String,
+    required: true,
+  },
+  banner: {
+    type: String,
+    required: true,
+  },
   name: {
     type: String,
     required: true,
@@ -26,34 +34,30 @@ const storeSchema = mongoose.Schema({
   description: String,
   phone: {
     type: String,
-    default: null
+    default: null,
   },
   whatsapp: {
     type: String,
-    default: null
+    default: null,
   },
   facebook: {
     type: String,
-    default: null
+    default: null,
   },
   instagram: {
     type: String,
-    default: null
+    default: null,
   },
   tiktok: {
     type: String,
-    default: null
+    default: null,
   },
   messenger: {
     type: String,
-    default: null
+    default: null,
   },
-  typeShippingTerms: {
-    type: String,
-    enums: ["LINK", "TEXT"],
-  },
-  shippingTerms: String,
-  paymentOptions: String,
+  shippingTerms: Array,
+  paymentOptions: Array,
 });
 
 // Exportar el esquema como modelo

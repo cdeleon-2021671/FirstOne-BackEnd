@@ -11,6 +11,7 @@ const productController = require('./product.controller');
 // Declarar cada ruta
 api.get('/get-all-products', productController.getAllProducts);
 api.get('/get-options', productController.getAutoComplete);
+api.get('/get-products-of-fags', productController.getProductsOfTags);
 // EL dos puntos (:) indica variable que va ir en la ruta
 api.get('/get-product-by-id/:productId', productController.getProductById);
 api.get('/get-products-by-store/:storeId', productController.getProductByStore);

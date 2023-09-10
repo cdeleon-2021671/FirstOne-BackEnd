@@ -2,8 +2,6 @@
 
 const axios = require("axios");
 const Store = require("../src/store/store.model");
-const { deleteProducts } = require("../src/product/product.controller");
-const { headers } = require("../src/utils/validate");
 
 // Reload Stores
 const reloadStores = async () => {
@@ -13,9 +11,7 @@ const reloadStores = async () => {
       await axios.delete(
         `http://localhost:3200/store/delete-store/${item._id}`
       );
-      await axios.post(`http://localhost:3200/store/add-store`, item, {
-        headers: headers,
-      });
+      await axios.post(`http://localhost:3200/store/add-store`, item);
     });
     return console.log("Stores have been reloaded");
   } catch (err) {
