@@ -27,7 +27,7 @@ exports.addProducts = async (item, id) => {
     product.stock = "Disponible";
   if (product.stock == "out of stock" || product.stock == "out_of_stock")
     product.stock = "Agotado";
-  product.tags = product.tags.map(item=> item.trim());
+  product.tags = product.tags.map((item) => item.trim());
   const newProduct = new Product(product);
   await newProduct.save();
 };
@@ -67,9 +67,12 @@ exports.getProductById = async (req, res) => {
 exports.getProductByStore = async (req, res) => {
   try {
     const { storeId } = req.params;
-    const products = await Product.find({ storeId: storeId }).populate(
-      "storeId"
-    );
+    const result = await Product.find({ storeId: storeId }).populate("storeId");
+    const products = [];
+    for (let index = 0; index < 20; index += 10) {
+      const array = result.slice(index, index + 10);
+      products.push(array);
+    }
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -148,7 +151,7 @@ exports.getProductsOfTags = async (req, res) => {
           tags: {
             $in: new RegExp(item, "i"),
           },
-        });
+        }).populate("storeId");
         return { tag: item, products: elements };
       })
     );
@@ -180,12 +183,8 @@ exports.getProductsOfTags = async (req, res) => {
         }
       }
     }
-    const allTags = [];
-    for (let index = 0; index < result.length; index += 14) {
-      const newTags = result.slice(index, index + 14);
-      allTags.push(newTags);
-    }
-    return res.send({ allTags });
+
+    return res.send({ result });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting tags" });
@@ -199,15 +198,24 @@ const axios = require("axios");
 exports.searchProducts = async (req, res) => {
   try {
     const { search } = req.body;
-    let result = await Product.find({
+    let tags = await Product.find({
       tags: {
         $in: new RegExp(search, "i"),
       },
-    });
-    if (result == 0)
-      result = await Product.find({
-        name: new RegExp(search, "i"),
-      });
+    }).populate("storeId");
+    let store = await Store.findOne({
+      name: new RegExp(search, "i"),
+    })
+    let productsByStore;
+    let result;
+    if (store) {
+      productsByStore = await Product.find({ storeId: store._id }).populate(
+        "storeId"
+      );
+      result = tags.concat(productsByStore);
+    } else {
+      result = tags;
+    }
     return res.send({ result });
   } catch (err) {
     console.log(err);
