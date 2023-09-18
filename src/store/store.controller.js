@@ -25,7 +25,7 @@ exports.addStore = async (req, res) => {
     if (alreadyStore)
       return res.status(400).send({ message: `Store already exists in db` });
     // Convertir xml
-    const { data } = await axios.get(store.xml);
+    const { data } = await axios.get(`${store.xml}`);
     const parser = new xml2js.Parser({
       normalize: true,
       explicitRoot: false,
@@ -36,7 +36,7 @@ exports.addStore = async (req, res) => {
     const newStore = new Store(store);
     await newStore.save();
     // Agregar los productos a la db
-    const {item} = channel[0];
+    const { item } = channel[0];
     item.forEach((index) => {
       addProducts(index, newStore._id);
     });
@@ -70,11 +70,11 @@ exports.deleteStore = async (req, res) => {
 };
 
 // Get Stores
-exports.getStores = async(req, res)=>{
+exports.getStores = async (req, res) => {
   try {
     const stores = await Store.find({});
-    return res.send({stores})
+    return res.send({ stores });
   } catch (err) {
     console.log(err);
   }
-}
+};

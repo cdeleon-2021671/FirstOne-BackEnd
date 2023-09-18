@@ -4,6 +4,7 @@
 // Traer el modelo Product y de Store
 const Product = require("./product.model");
 const Store = require("../store/store.model");
+const {removeStopwords, spa} = require("stopword");
 
 // Add Products
 exports.addProducts = async (item, id) => {
@@ -35,16 +36,44 @@ exports.addProducts = async (item, id) => {
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const allProducts = await Product.find({}).populate("storeId");
-    const products = [];
-    for (let index = 0; index < allProducts.length; index += 18) {
-      const array = allProducts.slice(index, index + 18);
-      products.push(array);
-    }
-    return res.send({ products });
+    const allProducts = await Product.find({})
+      .sort({
+        views: -1,
+      })
+      .populate("storeId");
+    return res.send({ allProducts });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting all products" });
+  }
+};
+
+// Get offers
+exports.getAllOffers = async (req, res) => {
+  try {
+    const allOffers = await Product.find({
+      $or: [
+        { salePrice: { $gt: 0 } },
+        {
+          tags: {
+            $in: new RegExp("ofer", "i"),
+          },
+        },
+      ],
+    })
+      .sort({ views: -1 })
+      .sort({ price: 1 })
+      .populate("storeId");
+    for (let key1 = 0; key1 < allOffers.length; key1++) {
+      for (let key2 = key1 + 1; key2 < allOffers.length; key2++) {
+        if (allOffers[key1]._id.toString() == allOffers[key2]._id.toString())
+          allOffers.splice(key2);
+      }
+    }
+    return res.send({ allOffers });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error gettign offers" });
   }
 };
 
@@ -67,16 +96,92 @@ exports.getProductById = async (req, res) => {
 exports.getProductByStore = async (req, res) => {
   try {
     const { storeId } = req.params;
-    const result = await Product.find({ storeId: storeId }).populate("storeId");
-    const products = [];
-    for (let index = 0; index < 20; index += 10) {
-      const array = result.slice(index, index + 10);
-      products.push(array);
-    }
+    const products = await Product.find({ storeId: storeId })
+      .sort({ views: -1 })
+      .populate("storeId");
     return res.send({ products });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting product" });
+  }
+};
+
+exports.getSimilarProducts = async (req, res) => {
+  try {
+    const { search, storeId, name } = req.body;
+    const tags = Array.from(new Set(search));
+    const newName = name.replace(/[()"-]+/g, "");
+    const keys = removeStopwords(newName.split(" "), spa);
+    const products = [];
+    for (const element of keys) {
+      let tags = await Product.find({
+        tags: {
+          $in: new RegExp(element, "i"),
+        },
+        storeId: storeId,
+      }).populate("storeId");
+      products.push(tags);
+    }
+    for (const element of tags) {
+      let tags = await Product.find({
+        tags: {
+          $in: new RegExp(element, "i"),
+        },
+        storeId: storeId,
+      }).populate("storeId");
+      products.push(tags);
+    }
+    const result = [];
+    for (const element of products) {
+      for (const product of element) {
+        result.push(product);
+      }
+    }
+    for (let key1 = 0; key1 < result.length; key1++) {
+      for (let key2 = key1 + 1; key2 < result.length; key2++) {
+        if (result[key1]._id.toString() == result[key2]._id.toString())
+          result.splice(key2);
+      }
+    }
+    return res.send({ result });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting products" });
+  }
+};
+
+exports.getProductsByTag = async (req, res) => {
+  try {
+    const { tag } = req.body;
+    let products = await Product.find({
+      tags: {
+        $in: new RegExp(tag, "i"),
+      },
+    })
+      .sort({ views: -1 })
+      .populate("storeId");
+    return res.send({ products });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting products" });
+  }
+};
+
+exports.getProductsByStoreTag = async (req, res) => {
+  try {
+    const { tag, storeId } = req.body;
+    let products = await Product.find({
+      tags: {
+        $in: new RegExp(tag, "i"),
+      },
+      storeId: storeId,
+    })
+      .sort({ views: -1 })
+      .populate("storeId");
+    return res.send({ products });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting products" });
   }
 };
 
@@ -87,7 +192,9 @@ const getTags = async () => {
     const allTags = [];
     allProducts.forEach((item) => {
       item.tags.forEach((e) => {
-        allTags.push(e.trim());
+        const name = e.trim();
+        const result = name.replace('#', '');
+        allTags.push(result);
       });
     });
     const newAllTags = allTags.filter((item) => item != "Home");
@@ -192,30 +299,16 @@ exports.getProductsOfTags = async (req, res) => {
 };
 
 // Search products
-const stopWord = require("stopword");
 const axios = require("axios");
 
 exports.searchProducts = async (req, res) => {
   try {
     const { search } = req.body;
-    let tags = await Product.find({
+    let result = await Product.find({
       tags: {
         $in: new RegExp(search, "i"),
       },
     }).populate("storeId");
-    let store = await Store.findOne({
-      name: new RegExp(search, "i"),
-    })
-    let productsByStore;
-    let result;
-    if (store) {
-      productsByStore = await Product.find({ storeId: store._id }).populate(
-        "storeId"
-      );
-      result = tags.concat(productsByStore);
-    } else {
-      result = tags;
-    }
     return res.send({ result });
   } catch (err) {
     console.log(err);
