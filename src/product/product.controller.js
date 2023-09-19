@@ -4,8 +4,8 @@
 // Traer el modelo Product y de Store
 const Product = require("./product.model");
 const Store = require("../store/store.model");
-const {removeStopwords, spa} = require("stopword");
-const {convert} = require('html-to-text')
+const { removeStopwords, spa } = require("stopword");
+const { convert } = require("html-to-text");
 
 // Add Products
 exports.addProducts = async (item, id) => {
@@ -15,10 +15,10 @@ exports.addProducts = async (item, id) => {
     name: convert(item.title[0]),
     description: convert(item.description[0]),
     price: item.price[0],
-    salePrice: item['sale_price'] ? item['sale_price'][0] : '',
-    tags: item['product_type'].join(";").replace(/&gt/g, "").split(";"),
+    salePrice: item["sale_price"] ? item["sale_price"][0] : "",
+    tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
     stock: item.availability[0],
-    image: item['image_link'][0]
+    image: item["image_link"][0],
   };
   if (product.stock == "in_stock" || product.stock == "in stock")
     product.stock = "Disponible";
@@ -85,11 +85,11 @@ exports.getProductById = async (req, res) => {
     const newName = product.name.replace(/[()"-+#]+/g, "");
     const keys = removeStopwords(newName.split(" "), spa);
     let category = tags[0];
-    keys.forEach(name=>{
-      tags.forEach(tag=>{
-        if(tag.includes(name)) category = tag;
-      })
-    })
+    keys.forEach((name) => {
+      tags.forEach((tag) => {
+        if (tag.includes(name)) category = tag;
+      });
+    });
     return res.send({ product, category });
   } catch (err) {
     console.log(err);
@@ -159,9 +159,14 @@ exports.getProductsByTag = async (req, res) => {
   try {
     const { tag } = req.body;
     let products = await Product.find({
-      tags: {
-        $in: new RegExp(tag, "i"),
-      },
+      $or: [
+        {
+          tags: {
+            $in: new RegExp(tag, "i"),
+          },
+        },
+        { name: new RegExp(tag, "i") },
+      ],
     })
       .sort({ views: -1 })
       .populate("storeId");
@@ -198,7 +203,7 @@ const getTags = async () => {
     allProducts.forEach((item) => {
       item.tags.forEach((e) => {
         const name = e.trim();
-        const result = name.replace('#', '');
+        const result = name.replace("#", "");
         allTags.push(result);
       });
     });
@@ -300,23 +305,5 @@ exports.getProductsOfTags = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting tags" });
-  }
-};
-
-// Search products
-const axios = require("axios");
-
-exports.searchProducts = async (req, res) => {
-  try {
-    const { search } = req.body;
-    let result = await Product.find({
-      tags: {
-        $in: new RegExp(search, "i"),
-      },
-    }).populate("storeId");
-    return res.send({ result });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).send({ message: "Error searching products" });
   }
 };

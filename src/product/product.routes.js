@@ -7,6 +7,7 @@ const express = require('express');
 const api = express.Router();
 // Utilizar el controlador
 const productController = require('./product.controller');
+const searchController = require('./searchController');
 
 // Declarar cada ruta
 api.get('/get-all-products', productController.getAllProducts);
@@ -19,7 +20,7 @@ api.get('/get-product-by-id/:productId', productController.getProductById);
 api.get('/get-products-by-store/:storeId', productController.getProductByStore);
 api.post('/get-products-by-tag', productController.getProductsByTag);
 api.post('/get-products-by-store-tag', productController.getProductsByStoreTag);
-api.post('/search-products', productController.searchProducts);
+api.post('/search-products', searchController.searchProducts);
 
 // Exportar las rutas para ser utilizadas en el app
 module.exports = api;
