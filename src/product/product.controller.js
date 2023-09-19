@@ -5,25 +5,21 @@
 const Product = require("./product.model");
 const Store = require("../store/store.model");
 const {removeStopwords, spa} = require("stopword");
+const {convert} = require('html-to-text')
 
 // Add Products
 exports.addProducts = async (item, id) => {
-  const keys = Object.keys(item);
-  const product = {};
-  product.storeId = id;
-  for (let key of keys) {
-    if (key == "link" || key == "g:link") product.urlProduct = item[key][0];
-    if (key.includes("title"))
-      product.name = item[key][0].replace(/&quot;/g, `"`);
-    if (key.includes("description"))
-      product.description = item[key][0].replace(/&nbsp;+/g, "");
-    if (key == "price" || key == "g:price") product.price = item[key][0];
-    if (key == "g:sale_price") product.salePrice = item[key][0];
-    if (key.includes("product_type"))
-      product.tags = item[key].join(";").replace(/&gt/g, "").split(";");
-    if (key.includes("availability")) product.stock = item[key][0];
-    if (key.includes("image_link")) product.image = item[key][0];
-  }
+  const product = {
+    storeId: id,
+    urlProduct: item.link[0],
+    name: convert(item.title[0]),
+    description: convert(item.description[0]),
+    price: item.price[0],
+    salePrice: item['sale_price'] ? item['sale_price'][0] : '',
+    tags: item['product_type'].join(";").replace(/&gt/g, "").split(";"),
+    stock: item.availability[0],
+    image: item['image_link'][0]
+  };
   if (product.stock == "in_stock" || product.stock == "in stock")
     product.stock = "Disponible";
   if (product.stock == "out of stock" || product.stock == "out_of_stock")
@@ -85,7 +81,16 @@ exports.getProductById = async (req, res) => {
       "storeId"
     );
     if (!product) return res.status(404).send({ message: "Product not found" });
-    return res.send({ product });
+    const tags = Array.from(new Set(product.tags));
+    const newName = product.name.replace(/[()"-+#]+/g, "");
+    const keys = removeStopwords(newName.split(" "), spa);
+    let category = tags[0];
+    keys.forEach(name=>{
+      tags.forEach(tag=>{
+        if(tag.includes(name)) category = tag;
+      })
+    })
+    return res.send({ product, category });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting product" });
@@ -110,7 +115,7 @@ exports.getSimilarProducts = async (req, res) => {
   try {
     const { search, storeId, name } = req.body;
     const tags = Array.from(new Set(search));
-    const newName = name.replace(/[()"-]+/g, "");
+    const newName = name.replace(/[()"-+#]+/g, "");
     const keys = removeStopwords(newName.split(" "), spa);
     const products = [];
     for (const element of keys) {

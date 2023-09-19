@@ -6,6 +6,7 @@ const Product = require("../product/product.model");
 const { addProducts } = require("../product/product.controller");
 const axios = require("axios");
 const xml2js = require("xml2js");
+const { stripPrefix } = require("xml2js").processors;
 
 // Add Store
 exports.addStore = async (req, res) => {
@@ -27,9 +28,9 @@ exports.addStore = async (req, res) => {
     // Convertir xml
     const { data } = await axios.get(`${store.xml}`);
     const parser = new xml2js.Parser({
-      normalize: true,
+      tagNameProcessors: [stripPrefix],
       explicitRoot: false,
-      ignoreAttrs: true,
+      normalizeTags: true,
     });
     const { channel } = await parser.parseStringPromise(data);
     // Agregar la tienda a la db
