@@ -78,7 +78,7 @@ const searchInStoreDesc = async (combinations) => {
             { name: { $all: nameQuery } },
             { description: { $all: nameQuery } },
           ],
-        }).populate("storeId");
+        });
         return store;
       })
     );
