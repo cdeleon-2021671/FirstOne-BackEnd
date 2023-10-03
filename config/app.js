@@ -15,6 +15,7 @@ let port = process.env.PORT || 3500;
 const storeRoutes = require("../src/store/store.routes");
 const productRoutes = require("../src/product/product.routes");
 const conversionRoutes = require("../src/conversion/conversion.routes");
+const assetsRoutes = require('../src/assets/assets.routes');
 
 // Convertir las peticiones en objetos json
 app.use(express.urlencoded({ extended: false }));
@@ -29,6 +30,7 @@ app.use(morgan("dev")); // Herramienta de desarrollo
 app.use("/store", storeRoutes);
 app.use("/product", productRoutes);
 app.use("/conversion", conversionRoutes);
+app.use('/image', assetsRoutes);
 
 // Funcion para iniciar el servidor en un puerto designado
 exports.initServer = async () => {
