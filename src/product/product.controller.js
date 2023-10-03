@@ -177,16 +177,30 @@ exports.getSimilarProducts = async (req, res) => {
 exports.getProductsByTag = async (req, res) => {
   try {
     const { tag } = req.body;
-    let products = await Product.find({
-      $or: [
-        {
-          tags: {
-            $in: new RegExp(tag, "i"),
+    let products = null;
+    if (tag.includes("Ofertas")) {
+      products = await Product.find({
+        $or: [
+          {
+            tags: {
+              $in: new RegExp(tag, "i"),
+            },
           },
-        },
-        { name: new RegExp(tag, "i") },
-      ],
-    }).populate("storeId");
+          { salePrice: { $gt: 0 } },
+        ],
+      }).populate("storeId");
+    } else {
+      products = await Product.find({
+        $or: [
+          {
+            tags: {
+              $in: new RegExp(tag, "i"),
+            },
+          },
+          { name: new RegExp(tag, "i") },
+        ],
+      }).populate("storeId");
+    }
     return res.send({ products });
   } catch (err) {
     console.log(err);

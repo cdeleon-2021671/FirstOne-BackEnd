@@ -4,6 +4,7 @@ const { removeStopwords, spa } = require("stopword");
 const Store = require("../store/store.model");
 const Product = require("./product.model");
 const { offerWords } = require("./keywords");
+const Fuse = require("fuse.js");
 
 const cleanSearch = (text) => {
   const newText = text.replace(/[-[\]{}()*+?.,;:#@<>\\^$|#"']+/g, " ").trim();
@@ -16,12 +17,12 @@ const cleanSearch = (text) => {
 const combineNumbers = (numbers) => {
   const combinations = [];
 
-  for (let i = 0; i < numbers.length; i++) {
-    for (let j = i + 1; j < numbers.length; j++) {
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    for (let j = i - 1; j > 0; j--) {
       combinations.push([numbers[i], numbers[j]]);
     }
   }
-  for (let i = 0; i < numbers.length; i++) {
+  for (let i = numbers.length - 1; i >= 0; i--) {
     combinations.push([numbers[i]]);
   }
 
@@ -164,7 +165,6 @@ const searchByName = async (search) => {
 const orderProducts = (array) => {
   const uniqueProducts = new Set();
   const result = [];
-
   for (const item of array) {
     const itemId = item._id.toString();
     if (!uniqueProducts.has(itemId)) {
@@ -176,38 +176,67 @@ const orderProducts = (array) => {
   return result;
 };
 
-const fuzzySearch = (combinations) => {
-  // console.log(combinations);
+const fuzzySearchProducts = async (combinations) => {
+  const products = await Product.find({}).populate("storeId");
+  const response = [];
+  combinations.forEach((item) => {
+    const search = item.join(" ");
+    const fuse = new Fuse(products, {
+      ignoreLocation: true,
+      distance: 0,
+      threshold: 0.0,
+      keys: [
+        "name",
+        "tags",
+        "storeId.name",
+        "storeId.description",
+        "description",
+        "stock",
+      ],
+    });
+    const filters = Array.from(fuse.search(search));
+    const result = filters.map(({ item }) => item);
+    response.push(result);
+  });
+  return response;
+};
+
+const fuzzySearchStores = async (search) => {
+  const stores = await Store.find({});
+  const fuse = new Fuse(stores, {
+    ignoreLocation: true,
+    distance: 0,
+    threshold: 0.0,
+    keys: ["name", "description"],
+  });
+  const filters = Array.from(fuse.search(search));
+  const result = filters.map(({ item }) => item);
+  const response = [];
+  for (const element of result) {
+    const products = await Product.find({ storeId: element._id });
+    response.push({ store: element, products: products.length });
+  }
+  return response;
 };
 
 exports.searchProducts = async (req, res) => {
   try {
     const { search } = req.body;
-    const offers = await getOffers(search);
-    const allTags = await searchTags(search);
-    const byName = await searchByName(search);
     const newSearch = cleanSearch(search);
     const combinations = combineNumbers(newSearch);
-    // Buscar en nombre producto
-    const product = await searchInNameDesc(combinations);
-    // Buscar en tags
-    const tags = await searchInTags(combinations);
-    // Buscar en nombre tienda
-    const store = await searchInStoreDesc(combinations);
-    const recoverySearch = await fuzzySearch(combinations);
-    const allProducts = offers
-      .concat(allTags)
-      .concat(byName)
-      .concat(tags)
-      .concat(product)
-      .concat(store)
-      .concat(recoverySearch);
+    let newText = search.replace(/[-]+/g, " ");
+    const offers = await getOffers(newText);
+    const allTags = await searchTags(newText);
+    const byName = await searchByName(newText);
+    const products = await fuzzySearchProducts(combinations);
+    const stores = await fuzzySearchStores(newText);
+    const allProducts = offers.concat(products).concat(byName).concat(allTags);
     const productsResult = allProducts.reduce((acumulador, array) => {
       return acumulador.concat(array);
     }, []);
     const allResults = productsResult.filter((item) => item != null);
     const result = orderProducts(allResults);
-    return res.send({ result });
+    return res.send({ result: result, stores: stores });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error searching products" });
