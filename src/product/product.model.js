@@ -6,6 +6,10 @@ const mongoose = require("mongoose");
 
 // Crear el esquema de los datos
 const productSchema = mongoose.Schema({
+  idProduct: {
+    type: Number,
+    required: true,
+  },
   storeId: {
     // ObjectId es decir que tiene que ser id
     type: mongoose.Schema.Types.ObjectId,
@@ -31,6 +35,7 @@ const productSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
+  condition: String,
   // Tipo de dato numero, puede ser entero o con decimales
   salePrice: Number,
   saleStartDate: String, // Fecha

@@ -11,15 +11,20 @@ const { convert } = require("html-to-text");
 exports.addProducts = async (item, id) => {
   const product = {
     storeId: id,
+    idProduct: item.id[0],
     urlProduct: item.link[0],
     name: convert(item.title[0]),
     description: convert(item.description[0]),
     price: item.price[0],
+    condition: item.condition[0],
     salePrice: item["sale_price"] ? item["sale_price"][0] : "",
+    saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
+    saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
     tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
     stock: item.availability[0],
     image: item["image_link"][0],
   };
+  if (product.condition.toLowerCase() == "new") product.condition = "Nuevo";
   if (product.stock == "in_stock" || product.stock == "in stock")
     product.stock = "Disponible";
   if (product.stock == "out of stock" || product.stock == "out_of_stock")
@@ -32,15 +37,28 @@ exports.addProducts = async (item, id) => {
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const allProducts = await Product.find({})
-      .sort({
-        views: -1,
-      })
-      .populate("storeId");
+    const allProducts = await Product.find({}).populate("storeId");
+    for (let i = allProducts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allProducts[i], allProducts[j]] = [allProducts[j], allProducts[i]];
+    }
     return res.send({ allProducts });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting all products" });
+  }
+};
+
+// Get Most Viewd
+exports.getMostViewed = async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .populate("storeId")
+      .sort({ view: "desc" });
+    return res.send({ products });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting most viewed" });
   }
 };
 
@@ -56,15 +74,16 @@ exports.getAllOffers = async (req, res) => {
           },
         },
       ],
-    })
-      .sort({ views: -1 })
-      .sort({ price: 1 })
-      .populate("storeId");
+    }).populate("storeId");
     for (let key1 = 0; key1 < allOffers.length; key1++) {
       for (let key2 = key1 + 1; key2 < allOffers.length; key2++) {
         if (allOffers[key1]._id.toString() == allOffers[key2]._id.toString())
           allOffers.splice(key2);
       }
+    }
+    for (let i = allOffers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allOffers[i], allOffers[j]] = [allOffers[j], allOffers[i]];
     }
     return res.send({ allOffers });
   } catch (err) {
@@ -98,12 +117,12 @@ exports.getProductById = async (req, res) => {
 };
 
 // Get products by store
-exports.getProductByStore = async (req, res) => {
+exports.getProductsByStore = async (req, res) => {
   try {
     const { storeId } = req.params;
-    const products = await Product.find({ storeId: storeId })
-      .sort({ views: -1 })
-      .populate("storeId");
+    const products = await Product.find({ storeId: storeId }).populate(
+      "storeId"
+    );
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -167,9 +186,7 @@ exports.getProductsByTag = async (req, res) => {
         },
         { name: new RegExp(tag, "i") },
       ],
-    })
-      .sort({ views: -1 })
-      .populate("storeId");
+    }).populate("storeId");
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -185,9 +202,7 @@ exports.getProductsByStoreTag = async (req, res) => {
         $in: new RegExp(tag, "i"),
       },
       storeId: storeId,
-    })
-      .sort({ views: -1 })
-      .populate("storeId");
+    }).populate("storeId");
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -265,9 +280,14 @@ exports.getProductsOfTags = async (req, res) => {
     let allProducts = await Promise.all(
       tags.map(async (item) => {
         const elements = await Product.find({
-          tags: {
-            $in: new RegExp(item, "i"),
-          },
+          $or: [
+            { name: new RegExp(item, "i") },
+            {
+              tags: {
+                $in: new RegExp(item, "i"),
+              },
+            },
+          ],
         }).populate("storeId");
         return { tag: item, products: elements };
       })

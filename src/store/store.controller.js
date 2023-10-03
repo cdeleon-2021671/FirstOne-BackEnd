@@ -38,9 +38,11 @@ exports.addStore = async (req, res) => {
     await newStore.save();
     // Agregar los productos a la db
     const { item } = channel[0];
-    item.forEach((index) => {
-      addProducts(index, newStore._id);
-    });
+    for (const element of item) {
+      const product = await Product.findOne({ idProduct: element.id[0] });
+      if (product) continue;
+      addProducts(element, newStore._id);
+    }
     return res.send({ message: "Store added successfully" });
   } catch (err) {
     console.log(err);
@@ -73,7 +75,13 @@ exports.deleteStore = async (req, res) => {
 // Get Stores
 exports.getStores = async (req, res) => {
   try {
-    const stores = await Store.find({});
+    const allStores = await Store.find({});
+    const stores = [];
+    for (const element of allStores) {
+      const products = await Product.find({ storeId: element._id });
+      const store = { store: element, products: products.length };
+      stores.push(store);
+    }
     return res.send({ stores });
   } catch (err) {
     console.log(err);
