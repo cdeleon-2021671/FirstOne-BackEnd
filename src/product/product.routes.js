@@ -18,12 +18,7 @@ api.get("/get-most-viewed", productController.getMostViewed);
 api.post("/get-similar-products", productController.getSimilarProducts);
 // EL dos puntos (:) indica variable que va ir en la ruta
 api.get("/get-product-by-id/:productId", productController.getProductById);
-api.get(
-  "/get-products-by-store/:storeId",
-  productController.getProductsByStore
-);
 api.post("/get-products-by-tag", productController.getProductsByTag);
-api.post("/get-products-by-store-tag", productController.getProductsByStoreTag);
 api.post("/search-products", searchController.searchProducts);
 
 // Exportar las rutas para ser utilizadas en el app

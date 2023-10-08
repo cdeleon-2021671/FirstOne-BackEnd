@@ -16,19 +16,25 @@ exports.addProducts = async (item, id) => {
     name: convert(item.title[0]),
     description: convert(item.description[0]),
     price: item.price[0],
-    condition: item.condition[0],
     salePrice: item["sale_price"] ? item["sale_price"][0] : "",
     saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
     saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
     tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
     stock: item.availability[0],
+    quantity: item.quantity ? item.quantity[0] : "",
     image: item["image_link"][0],
   };
-  if (product.condition.toLowerCase() == "new") product.condition = "Nuevo";
   if (product.stock == "in_stock" || product.stock == "in stock")
     product.stock = "Disponible";
   if (product.stock == "out of stock" || product.stock == "out_of_stock")
     product.stock = "Agotado";
+
+  if (product.quantity) {
+    if (product.quantity > 0 && product.quantity <= 5)
+      product.stock = "Casi agotado";
+    else if (product.quantity > 5) product.stock = "Disponible";
+    else product.stock = "Agotado";
+  }
   product.tags = product.tags.map((item) => item.trim());
   const newProduct = new Product(product);
   await newProduct.save();
@@ -75,12 +81,6 @@ exports.getAllOffers = async (req, res) => {
         },
       ],
     }).populate("storeId");
-    for (let key1 = 0; key1 < allOffers.length; key1++) {
-      for (let key2 = key1 + 1; key2 < allOffers.length; key2++) {
-        if (allOffers[key1]._id.toString() == allOffers[key2]._id.toString())
-          allOffers.splice(key2);
-      }
-    }
     for (let i = allOffers.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [allOffers[i], allOffers[j]] = [allOffers[j], allOffers[i]];
@@ -110,20 +110,6 @@ exports.getProductById = async (req, res) => {
       });
     });
     return res.send({ product, category });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).send({ message: "Error getting product" });
-  }
-};
-
-// Get products by store
-exports.getProductsByStore = async (req, res) => {
-  try {
-    const { storeId } = req.params;
-    const products = await Product.find({ storeId: storeId }).populate(
-      "storeId"
-    );
-    return res.send({ products });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting product" });
@@ -167,6 +153,24 @@ exports.getSimilarProducts = async (req, res) => {
           result.splice(key2);
       }
     }
+    if (result.length < 40) {
+      const products = await Product.find({ storeId: storeId })
+        .populate("storeId")
+        .sort({ view: "desc" });
+      result.push(...products);
+    }
+    const toRemove = [];
+    for (let key1 = 0; key1 < result.length; key1++) {
+      for (let key2 = key1 + 1; key2 < result.length; key2++) {
+        if (result[key1]._id.toString() == result[key2]._id.toString()) {
+          toRemove.push(result[key2]);
+        }
+      }
+    }
+    // Elimina los elementos del arreglo `result` utilizando el arreglo temporal
+    for (let i = 0; i < toRemove.length; i++) {
+      result.splice(result.indexOf(toRemove[i]), 1);
+    }
     return res.send({ result });
   } catch (err) {
     console.log(err);
@@ -192,12 +196,12 @@ exports.getProductsByTag = async (req, res) => {
     } else {
       products = await Product.find({
         $or: [
+          { name: new RegExp(tag, "i") },
           {
             tags: {
               $in: new RegExp(tag, "i"),
             },
           },
-          { name: new RegExp(tag, "i") },
         ],
       }).populate("storeId");
     }
@@ -207,20 +211,28 @@ exports.getProductsByTag = async (req, res) => {
     return res.status(500).send({ message: "Error getting products" });
   }
 };
-
-exports.getProductsByStoreTag = async (req, res) => {
+// Enviar opciones de autocompletado
+exports.getAutoComplete = async (req, res) => {
   try {
-    const { tag, storeId } = req.body;
-    let products = await Product.find({
-      tags: {
-        $in: new RegExp(tag, "i"),
-      },
-      storeId: storeId,
-    }).populate("storeId");
-    return res.send({ products });
+    const products = await Product.find().select("name tags");
+    const stores = await Store.find().select("name");
+
+    const tags = products.reduce((acc, item) => {
+      const innerArr = item.tags;
+      innerArr.forEach((innerItem) => {
+        acc.push(innerItem);
+      });
+      return acc;
+    }, []);
+    const names = products.map(({ name }) => name);
+    const storesName = stores.map(({ name }) => name);
+    const all = tags.concat(storesName).concat(names);
+    const newAllTags = all.filter((item) => item != "Home");
+    const result = Array.from(new Set(newAllTags));
+    return res.send({ result });
   } catch (err) {
     console.log(err);
-    return res.status(500).send({ message: "Error getting products" });
+    return res.status(500).send({ message: "Error gettign options" });
   }
 };
 
@@ -245,49 +257,8 @@ const getTags = async () => {
   }
 };
 
-// Traer el nombre de todas las tiendas
-const getNameStore = async () => {
-  try {
-    const stores = await Store.find({});
-    const result = stores.map((item) => {
-      return item.name;
-    });
-    return result;
-  } catch (err) {
-    console.log(err);
-    return console.log("Error getting name stores");
-  }
-};
-
-// Traer el nombre de todos los productos
-const getNameProduct = async () => {
-  try {
-    const products = await Product.find({});
-    const result = products.map((item) => {
-      return item.name;
-    });
-    return result;
-  } catch (err) {
-    console.log(err);
-    return console.log("Error getting name stores");
-  }
-};
-
-// Enviar opciones de autocompletado
-exports.getAutoComplete = async (req, res) => {
-  try {
-    const tags = await getTags();
-    const stores = await getNameStore();
-    const products = await getNameProduct();
-    const result = tags.concat(stores).concat(products);
-    return res.send({ result });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).send({ message: "Error gettign options" });
-  }
-};
-
 // traer todas las etiquetas con un producto sin repetir
+
 exports.getProductsOfTags = async (req, res) => {
   try {
     const tags = await getTags();

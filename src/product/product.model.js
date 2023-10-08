@@ -35,17 +35,16 @@ const productSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  condition: String,
   // Tipo de dato numero, puede ser entero o con decimales
   salePrice: Number,
   saleStartDate: String, // Fecha
   saleEndDate: String, // Fecha
-  categories: String,
   tags: Array,
   stock: {
     type: String,
     required: true,
   },
+  quantity: Number,
   views: {
     type: Number,
     // AL ingresar un productos siempre ingresara con cero views
