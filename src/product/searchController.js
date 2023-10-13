@@ -51,16 +51,35 @@ const getOffers = async (search) => {
   }
 };
 
-const searchByName = (combinations) => {
+const searchByName = async (combinations) => {
   try {
     const response = [];
-    combinations.forEach(async (element) => {
+    for (const element of combinations) {
       const search = element.join(" ");
       const products = await Product.find({
         name: new RegExp(search, "i"),
       });
       response.push(...products);
-    });
+    }
+    return response;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const searchByDescription = async (combinations) => {
+  try {
+    const response = [];
+    for (const element of combinations) {
+      const regex = "^(?=.*\\b" + element.join("\\b)(?=.*\\b") + "\\b)";
+      const products = await Product.find({
+        description: {
+          $regex: regex,
+          $options: "i",
+        },
+      });
+      response.push(...products);
+    }
     return response;
   } catch (err) {
     console.log(err);
@@ -72,10 +91,9 @@ const fyzzySearchProducts = async (combinations) => {
     const products = await Product.find().populate("storeId");
     const fuse = new Fuse(products, {
       ignoreLocation: true,
-      location: 0,
       distance: 0,
       threshold: 0.5,
-      keys: ["name", "tags"],
+      keys: ["name", "description", "tags"],
     });
     const response = [];
     combinations.forEach((element) => {
@@ -128,9 +146,10 @@ exports.searchProducts = async (req, res) => {
     const combinations = combineNumbers(newSearch);
     const byOffer = await getOffers(search);
     const byName = await searchByName(combinations);
+    const byDescription = await searchByDescription(combinations);
     const fuzzy = await fyzzySearchProducts(combinations);
     const stores = await fuzzySearchStores(search);
-    const flag = byOffer.concat(byName).concat(fuzzy);
+    const flag = byOffer.concat(byName).concat(byDescription).concat(fuzzy);
     const fullProducts = flag.filter((item) => item.length != 0);
     const result = orderProducts(fullProducts);
     return res.send({ result: result, stores: stores });

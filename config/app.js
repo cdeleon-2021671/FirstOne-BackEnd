@@ -16,6 +16,8 @@ const storeRoutes = require("../src/store/store.routes");
 const productRoutes = require("../src/product/product.routes");
 const conversionRoutes = require("../src/conversion/conversion.routes");
 const assetsRoutes = require("../src/assets/assets.routes");
+const userRoutes = require('../src/user/user.routes');
+const colorRoutes = require('../src/color/color.routes');
 
 // Convertir las peticiones en objetos json
 app.use(express.urlencoded({ extended: false }));
@@ -31,6 +33,8 @@ app.use("/store", storeRoutes);
 app.use("/product", productRoutes);
 app.use("/conversion", conversionRoutes);
 app.use("/image", assetsRoutes);
+app.use("/user", userRoutes);
+app.use("/color", colorRoutes);
 
 // Funcion para iniciar el servidor en un puerto designado
 exports.initServer = async () => {

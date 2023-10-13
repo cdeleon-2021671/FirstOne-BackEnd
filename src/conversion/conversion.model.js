@@ -10,17 +10,18 @@ const conversionSchema = mongoose.Schema({
     // Mixed es decir que puede ser un Id o puede ser null
     type: mongoose.Schema.Types.Mixed,
     // Referencia a quien haria el id
-    ref: 'Product'
+    ref: "Product",
   },
   storeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Store'
+    ref: "Store",
   },
-  // Tipo de dato vacio, String, puede ser texto, numeros (como string), etc 
+  // Tipo de dato vacio, String, puede ser texto, numeros (como string), etc
   type: String,
-  visitor: String,
+  date: String,
+  hour: String,
   data: String,
 });
 
 // Exportar el esquema como modelo
-module.exports = mongoose.model('Conversion', conversionSchema);
+module.exports = mongoose.model("Conversion", conversionSchema);
