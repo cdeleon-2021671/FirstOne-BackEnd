@@ -1,0 +1,91 @@
+"use strict";
+
+const User = require("./user.model");
+const nodemailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const { createToken } = require("../utils/validate");
+
+exports.adminDefault = async () => {
+  try {
+    const adminDefault = {
+      name: "Admin Default",
+      email: "admin",
+      password: "admin",
+      rol: "MASTER",
+      state: "ACTIVE",
+    };
+    const adminExists = await User.findOne({ email: "admin" }, { password: 0 });
+    if (adminExists) return console.log("Admin already exists");
+    adminDefault.password = bcrypt.hashSync(adminDefault.password, 10);
+    const newAdmin = new User(adminDefault);
+    await newAdmin.save();
+    return console.log("Admin was created");
+  } catch (err) {
+    return console.log(err);
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user)
+      return res.status(404).send({ message: "El correo no es correcto" });
+    const pass = bcrypt.compareSync(password, user.password);
+    if (pass == false)
+      return res.status(404).send({ message: "La contraseña no es correcta" });
+    const token = await createToken(user);
+    return res.send({ message: "Usuario verificado con éxito", token });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error, not logged" });
+  }
+};
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.MAIL,
+    pass: process.env.KEY_MAIL,
+  },
+});
+
+exports.sendMail = async (req, res) => {
+  try {
+    const { form, newCode } = req.body;
+    const { name, email } = form;
+    if (email == undefined || email == "" || email == " ")
+      return res.status(400).send({ message: "Email is required" });
+    await transporter.sendMail({
+      from: "Tienda.gt <tienda.gt@gmail.com>", // sender address
+      to: email, // list of receivers
+      subject: "Código de verificación", // Subject line
+      text: `Estimado ${name}. Su código de verificación es: ${newCode}`, // plain text body
+    });
+    const payload = {
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    };
+    const token = jwt.sign(payload, `${process.env.SECRET_KEY}`);
+    return res.send({ message: "Correo de seguridad enviado", token });
+  } catch (err) {
+    console.log(err);
+    return res.send({ message: "Error creating message" });
+  }
+};
+
+exports.validateCode = (req, res) => {
+  try {
+    const { token } = req.body;
+    const payload = jwt.decode(token, `${process.env.SECRET_KEY}`);
+    if (Math.floor(Date.now() / 1000) >= payload.exp)
+      return res.status(400).send({ message: "Code is expired" });
+    return res.send({ message: "Code verificated successfully" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error validating code" });
+  }
+};

@@ -19,6 +19,9 @@ const assetsRoutes = require("../src/assets/assets.routes");
 const userRoutes = require('../src/user/user.routes');
 const colorRoutes = require('../src/color/color.routes');
 
+// Traer admin por defecto
+const userController = require("../src/user/user.controller");
+
 // Convertir las peticiones en objetos json
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -39,5 +42,6 @@ app.use("/color", colorRoutes);
 // Funcion para iniciar el servidor en un puerto designado
 exports.initServer = async () => {
   app.listen(port);
+  userController.adminDefault();
   console.log(`Http server running on port ${port}`);
 };

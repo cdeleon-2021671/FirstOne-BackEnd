@@ -87,30 +87,3 @@ exports.getStores = async (req, res) => {
     console.log(err);
   }
 };
-
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: "cd6854002@gmail.com",
-    pass: "jsor dsmw ccba pyzx",
-  },
-});
-
-exports.createMail = async (req, res) => {
-  try {
-    await transporter.sendMail({
-      from: 'Ejemplo de prueba <tienda.gt@gmail.com>', // sender address
-      to: "cdeleonprincipal671@gmail.com", // list of receivers
-      subject: "Prueba", // Subject line
-      text: "Es un ejemplo para verificar si funciona el metodo de correos", // plain text body
-    });
-    return res.send({message: 'Correo enviado'})
-  } catch (err) {
-    console.log(err);
-    return res.send({ message: "Error creating message" });
-  }
-};
