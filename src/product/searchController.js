@@ -58,7 +58,7 @@ const searchByName = async (combinations) => {
       const search = element.join(" ");
       const products = await Product.find({
         name: new RegExp(search, "i"),
-      });
+      }).populate("storeId");
       response.push(...products);
     }
     return response;
@@ -77,7 +77,24 @@ const searchByDescription = async (combinations) => {
           $regex: regex,
           $options: "i",
         },
-      });
+      }).populate("storeId");
+      response.push(...products);
+    }
+    return response;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const searchByTag = async (combinations) => {
+  try {
+    const response = [];
+    for (const element of combinations) {
+      const products = await Product.find({
+        tags: {
+          $all: new RegExp(element, "i"),
+        },
+      }).populate("storeId");
       response.push(...products);
     }
     return response;
@@ -93,7 +110,7 @@ const fyzzySearchProducts = async (combinations) => {
       ignoreLocation: true,
       distance: 0,
       threshold: 0.5,
-      keys: ["name", "description", "tags"],
+      keys: ["name", "tags", "description"],
     });
     const response = [];
     combinations.forEach((element) => {
@@ -147,11 +164,13 @@ exports.searchProducts = async (req, res) => {
     const byOffer = await getOffers(search);
     const byName = await searchByName(combinations);
     const byDescription = await searchByDescription(combinations);
+    const byTags = await searchByTag(combinations);
     const fuzzy = await fyzzySearchProducts(combinations);
     const stores = await fuzzySearchStores(search);
-    const flag = byOffer.concat(byName).concat(byDescription).concat(fuzzy);
+    const flag = byOffer.concat(byName).concat(byDescription).concat(byTags);
     const fullProducts = flag.filter((item) => item.length != 0);
-    const result = orderProducts(fullProducts);
+    let result = orderProducts(fullProducts);
+    if (result.length == 0) result = fuzzy;
     return res.send({ result: result, stores: stores });
   } catch (err) {
     console.log(err);

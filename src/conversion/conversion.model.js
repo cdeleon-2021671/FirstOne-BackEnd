@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 const conversionSchema = mongoose.Schema({
   productId: {
     // Mixed es decir que puede ser un Id o puede ser null
-    type: mongoose.Schema.Types.Mixed,
+    type: mongoose.Schema.Types.ObjectId,
     // Referencia a quien haria el id
     ref: "Product",
   },
@@ -17,7 +17,6 @@ const conversionSchema = mongoose.Schema({
     ref: "Store",
   },
   // Tipo de dato vacio, String, puede ser texto, numeros (como string), etc
-  type: String,
   date: String,
   hour: String,
   data: String,

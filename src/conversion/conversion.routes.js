@@ -10,6 +10,7 @@ const conversionController = require("./conversion.controller");
 
 // Declarar cada ruta
 api.get("/test", conversionController.test);
+api.post("/add-view", conversionController.addViewProduct);
 
 // Exportar las rutas para ser utilizadas en el app
 module.exports = api;

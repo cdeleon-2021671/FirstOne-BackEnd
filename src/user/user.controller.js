@@ -6,6 +6,15 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { createToken } = require("../utils/validate");
 
+exports.getInfo = async (req, res) => {
+  try {
+    return res.send({ user: req.user });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting info" });
+  }
+};
+
 exports.adminDefault = async () => {
   try {
     const adminDefault = {
@@ -36,7 +45,7 @@ exports.login = async (req, res) => {
     if (pass == false)
       return res.status(404).send({ message: "La contraseña no es correcta" });
     const token = await createToken(user);
-    return res.send({ message: "Usuario verificado con éxito", token });
+    return res.send({ message: "Usuario verificado con éxito", token, user });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error, not logged" });
