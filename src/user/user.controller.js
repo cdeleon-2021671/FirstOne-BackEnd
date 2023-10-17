@@ -52,6 +52,25 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.createEcommerceAccount = async (req, res) => {
+  try {
+    const data = req.body;
+    data.password = bcrypt.hashSync(data.password, 10);
+    const newUser = new User(data);
+    const payload = {
+      email: data.email,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    };
+    const register = jwt.sign(payload, `${process.env.SECRET_KEY}`);
+    await newUser.save();
+    return res.send({ message: "User created successfully", register });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error creating account" });
+  }
+};
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -66,6 +85,9 @@ exports.sendMail = async (req, res) => {
   try {
     const { form, newCode } = req.body;
     const { name, email } = form;
+    const user = await User.findOne({ email: email });
+    if (user)
+      return res.status(400).send({ message: "Cuenta con correo existente" });
     if (email == undefined || email == "" || email == " ")
       return res.status(400).send({ message: "Email is required" });
     await transporter.sendMail({

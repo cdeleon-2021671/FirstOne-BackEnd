@@ -3,10 +3,6 @@
 
 const Store = require("./store.model"); // Traer el modelo Store
 const Product = require("../product/product.model");
-const { addProducts } = require("../product/product.controller");
-const axios = require("axios");
-const xml2js = require("xml2js");
-const { stripPrefix } = require("xml2js").processors;
 
 // Add Store
 exports.addStore = async (req, res) => {
@@ -25,24 +21,9 @@ exports.addStore = async (req, res) => {
     });
     if (alreadyStore)
       return res.status(400).send({ message: `Store already exists in db` });
-    // Convertir xml
-    const { data } = await axios.get(`${store.xml}`);
-    const parser = new xml2js.Parser({
-      tagNameProcessors: [stripPrefix],
-      explicitRoot: false,
-      normalizeTags: true,
-    });
-    const { channel } = await parser.parseStringPromise(data);
     // Agregar la tienda a la db
     const newStore = new Store(store);
     await newStore.save();
-    // Agregar los productos a la db
-    const { item } = channel[0];
-    for (const element of item) {
-      const product = await Product.findOne({ idProduct: element.id[0] });
-      if (product) continue;
-      addProducts(element, newStore._id);
-    }
     return res.send({ message: "Store added successfully" });
   } catch (err) {
     console.log(err);

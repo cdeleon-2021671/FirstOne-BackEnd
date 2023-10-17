@@ -56,8 +56,14 @@ const storeSchema = mongoose.Schema({
     type: String,
     default: null,
   },
+  tags: [],
   shippingTerms: Array,
   paymentOptions: Array,
+  state: {
+    type: String,
+    default: "REQUEST",
+    enums: ["REQUEST", "ACTIVE", "INACTIVE"],
+  },
 });
 
 // Exportar el esquema como modelo

@@ -6,38 +6,70 @@ const Product = require("./product.model");
 const Store = require("../store/store.model");
 const { removeStopwords, spa } = require("stopword");
 const { convert } = require("html-to-text");
+const { stripPrefix } = require("xml2js").processors;
+const xml2js = require("xml2js");
+const axios = require("axios");
+
+const createProducts = async (item, id) => {
+  try {
+    const product = {
+      storeId: id,
+      idProduct: item.id[0],
+      urlProduct: item.link[0],
+      name: convert(item.title[0]),
+      description: convert(item.description[0]),
+      price: item.price[0],
+      salePrice: item["sale_price"] ? item["sale_price"][0] : "",
+      saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
+      saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
+      tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
+      stock: item.availability[0],
+      quantity: item.quantity ? item.quantity[0] : "",
+      image: item["image_link"][0],
+    };
+    if (product.stock == "in_stock" || product.stock == "in stock")
+      product.stock = "Disponible";
+    if (product.stock == "out of stock" || product.stock == "out_of_stock")
+      product.stock = "Agotado";
+
+    if (product.quantity) {
+      if (product.quantity > 0 && product.quantity <= 5)
+        product.stock = "Casi agotado";
+      else if (product.quantity > 5) product.stock = "Disponible";
+      else product.stock = "Agotado";
+    }
+    product.tags = product.tags.map((item) => item.trim());
+    const newProduct = new Product(product);
+    await newProduct.save();
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 // Add Products
-exports.addProducts = async (item, id) => {
-  const product = {
-    storeId: id,
-    idProduct: item.id[0],
-    urlProduct: item.link[0],
-    name: convert(item.title[0]),
-    description: convert(item.description[0]),
-    price: item.price[0],
-    salePrice: item["sale_price"] ? item["sale_price"][0] : "",
-    saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
-    saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
-    tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
-    stock: item.availability[0],
-    quantity: item.quantity ? item.quantity[0] : "",
-    image: item["image_link"][0],
-  };
-  if (product.stock == "in_stock" || product.stock == "in stock")
-    product.stock = "Disponible";
-  if (product.stock == "out of stock" || product.stock == "out_of_stock")
-    product.stock = "Agotado";
-
-  if (product.quantity) {
-    if (product.quantity > 0 && product.quantity <= 5)
-      product.stock = "Casi agotado";
-    else if (product.quantity > 5) product.stock = "Disponible";
-    else product.stock = "Agotado";
+exports.addProducts = async (req, res) => {
+  try {
+    const { xml, storeId } = req.body;
+    // Convertir xml
+    const { data } = await axios.get(`${xml}`);
+    const parser = new xml2js.Parser({
+      tagNameProcessors: [stripPrefix],
+      explicitRoot: false,
+      normalizeTags: true,
+    });
+    const { channel } = await parser.parseStringPromise(data);
+    // Agregar los productos a la db
+    const { item } = channel[0];
+    for (const element of item) {
+      const product = await Product.findOne({ idProduct: element.id[0] });
+      if (product) continue;
+      createProducts(element, storeId);
+    }
+    return res.send({ message: "Products added successfully" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error adding products" });
   }
-  product.tags = product.tags.map((item) => item.trim());
-  const newProduct = new Product(product);
-  await newProduct.save();
 };
 
 // Get all products

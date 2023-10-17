@@ -10,6 +10,7 @@ const productController = require("./product.controller");
 const searchController = require("./searchController");
 
 // Declarar cada ruta
+api.post("/add-products", productController.addProducts);
 api.get("/get-all-products", productController.getAllProducts);
 api.get("/get-options", productController.getAutoComplete);
 api.get("/get-products-of-tags", productController.getProductsOfTags);

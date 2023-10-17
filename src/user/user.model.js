@@ -15,11 +15,6 @@ const userSchema = mongoose.Schema({
       },
     },
   ],
-  state: {
-    type: String,
-    default: "REQUEST",
-    enums: ["REQUEST", "ACTIVE"],
-  },
 });
 
 module.exports = mongoose.model("User", userSchema);
