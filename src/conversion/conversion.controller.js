@@ -12,11 +12,6 @@ exports.test = (req, res) => {
 
 exports.addViewProduct = async (req, res) => {
   try {
-    const { product } = req.body;
-    const view = {
-      productId: product._id,
-      storeId: product.storeId._id,
-    };
     console.log(mm().locale("es").format("LLLL"));
   } catch (err) {
     console.log(err);

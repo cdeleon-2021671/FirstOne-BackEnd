@@ -71,6 +71,26 @@ exports.createEcommerceAccount = async (req, res) => {
   }
 };
 
+exports.updateStores = async (req, res) => {
+  try {
+    const { register, email, storeId } = req.body;
+    let account = email;
+    if (register) {
+      const { email } = jwt.decode(register, `${process.env.SECRET_KEY}`);
+      account = email;
+    }
+    const user = await User.findOne({ email: account });
+    if (!user) return res.status(404).send({ message: "Cuenta no encontrada" });
+    await user.updateOne({
+      $push: { stores: { storeId: storeId } },
+    });
+    return res.send({ message: "Tienda agregada satisfactoriamente" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating account" });
+  }
+};
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -113,8 +133,8 @@ exports.validateCode = (req, res) => {
     const { token } = req.body;
     const payload = jwt.decode(token, `${process.env.SECRET_KEY}`);
     if (Math.floor(Date.now() / 1000) >= payload.exp)
-      return res.status(400).send({ message: "Code is expired" });
-    return res.send({ message: "Code verificated successfully" });
+      return res.status(400).send({ message: "Tiempo de espera agotado" });
+    return res.send({ message: "Verificado satisfactoriamente" });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error validating code" });

@@ -61,8 +61,8 @@ const storeSchema = mongoose.Schema({
   paymentOptions: Array,
   state: {
     type: String,
-    default: "REQUEST",
-    enums: ["REQUEST", "ACTIVE", "INACTIVE"],
+    default: "PENDIENTE",
+    enums: ["PENDIENTE", "ACTIVO", "INACTIVO"],
   },
 });
 

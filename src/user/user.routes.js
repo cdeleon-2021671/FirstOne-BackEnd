@@ -10,5 +10,6 @@ api.post("/validate", userController.validateCode);
 api.post("/login", userController.login);
 api.get("/info", ensureAuth, userController.getInfo);
 api.post("/ecommerce-account", userController.createEcommerceAccount);
+api.post("/update-stores", userController.updateStores);
 
 module.exports = api;

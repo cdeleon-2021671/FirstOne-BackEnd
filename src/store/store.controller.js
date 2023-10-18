@@ -20,11 +20,14 @@ exports.addStore = async (req, res) => {
       $or: [{ xml: store.xml }, { urlStore: store.urlStore }],
     });
     if (alreadyStore)
-      return res.status(400).send({ message: `Store already exists in db` });
+      return res.status(400).send({ message: `La tienda ya existe` });
     // Agregar la tienda a la db
     const newStore = new Store(store);
     await newStore.save();
-    return res.send({ message: "Store added successfully" });
+    return res.send({
+      message: "Tienda añadida satisfactoriamente",
+      storeId: newStore._id,
+    });
   } catch (err) {
     console.log(err);
     if (err.message.includes("required"))
@@ -56,7 +59,7 @@ exports.deleteStore = async (req, res) => {
 // Get Stores
 exports.getStores = async (req, res) => {
   try {
-    const allStores = await Store.find({});
+    const allStores = await Store.find({ state: "ACTIVE" });
     const stores = [];
     for (const element of allStores) {
       const products = await Product.find({ storeId: element._id });
