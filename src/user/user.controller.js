@@ -21,7 +21,7 @@ exports.adminDefault = async () => {
       name: "Admin Default",
       email: "admin",
       password: "admin",
-      rol: "MASTER",
+      rol: "MAESTRO",
       state: "ACTIVE",
     };
     const adminExists = await User.findOne({ email: "admin" }, { password: 0 });

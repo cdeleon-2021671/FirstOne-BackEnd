@@ -247,8 +247,7 @@ exports.getProductsByTag = async (req, res) => {
 exports.getAutoComplete = async (req, res) => {
   try {
     const products = await Product.find().select("name tags");
-    const stores = await Store.find().select("name");
-
+    const stores = await Store.find({state: 'ACTIVO'}).select("name");
     const tags = products.reduce((acc, item) => {
       const innerArr = item.tags;
       innerArr.forEach((innerItem) => {
