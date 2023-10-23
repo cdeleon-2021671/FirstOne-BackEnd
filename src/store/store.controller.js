@@ -36,6 +36,92 @@ exports.addStore = async (req, res) => {
   }
 };
 
+//Actualizar etiquetas
+exports.updateTags = async (req, res) => {
+  try {
+    const { items, storeId } = req.body;
+    const tags = items.map((item) => item.category);
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res
+        .status(404)
+        .send({ message: "Tienda a actualizar no encontrada" });
+    if (store.state != "PENDIENTE")
+      return res
+        .status(400)
+        .send({ message: "La tienda no se puede actualizar" });
+    await store.updateOne({ tags: tags });
+    return res.send({ message: "Etiquetas actualizadas" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating tags" });
+  }
+};
+
+//Actualizar metodos de compra
+exports.updateShippingTerms = async (req, res) => {
+  try {
+    const { shipping, storeId } = req.body;
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res
+        .status(404)
+        .send({ message: "Tienda a actualizar no encontrada" });
+    if (store.state != "PENDIENTE")
+      return res
+        .status(400)
+        .send({ message: "La tienda no se puede actualizar" });
+    const keys = Object.keys(shipping);
+    const terms = [];
+    for (const item of keys) {
+      if (shipping[item].trim() != "") {
+        terms.push(shipping[item]);
+      }
+    }
+    if (terms.length == 0)
+      return res
+        .status(400)
+        .send({ message: "No puede enviar elementos vacíos" });
+    await store.updateOne({ shippingTerms: terms });
+    return res.send({ message: "Opciones de envío actualizadas" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating shipping terms" });
+  }
+};
+
+//Actualizar metodos de pago
+exports.updatePaymentsOptions = async (req, res) => {
+  try {
+    const { payments, storeId } = req.body;
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res
+        .status(404)
+        .send({ message: "Tienda a actualizar no encontrada" });
+    if (store.state != "PENDIENTE")
+      return res
+        .status(400)
+        .send({ message: "La tienda no se puede actualizar" });
+    const keys = Object.keys(payments);
+    const terms = [];
+    for (const item of keys) {
+      if (payments[item].trim() != "") {
+        terms.push(payments[item]);
+      }
+    }
+    if (terms.length == 0)
+      return res
+        .status(400)
+        .send({ message: "No puede enviar elementos vacíos" });
+    await store.updateOne({ paymentOptions: terms });
+    return res.send({ message: "Opciones de pago actualizadas" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating payments" });
+  }
+};
+
 // Delete store
 exports.deleteStore = async (req, res) => {
   try {

@@ -2,7 +2,7 @@
 
 const mongoose = require("mongoose");
 
-const userSchema = mongoose.Schema({
+const colorSchema = mongoose.Schema({
   page: String,
   store: mongoose.Schema.Types.ObjectId,
   component: String,
@@ -12,4 +12,4 @@ const userSchema = mongoose.Schema({
   text: String,
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Color", colorSchema);

@@ -62,7 +62,7 @@ const storeSchema = mongoose.Schema({
   state: {
     type: String,
     default: "PENDIENTE",
-    enums: ["PENDIENTE", "ACTIVO", "INACTIVO"],
+    enums: ["PENDIENTE", "ACTIVA", "INACTIVA"],
   },
 });
 

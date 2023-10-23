@@ -14,7 +14,6 @@ let port = process.env.PORT || 3500;
 // Traer las rutas a utilizar
 const storeRoutes = require("../src/store/store.routes");
 const productRoutes = require("../src/product/product.routes");
-const conversionRoutes = require("../src/conversion/conversion.routes");
 const assetsRoutes = require("../src/assets/assets.routes");
 const userRoutes = require('../src/user/user.routes');
 const colorRoutes = require('../src/color/color.routes');
@@ -34,7 +33,6 @@ app.use(morgan("dev")); // Herramienta de desarrollo
 // Establecer las rutas raices y las rutas a utilizar
 app.use("/store", storeRoutes);
 app.use("/product", productRoutes);
-app.use("/conversion", conversionRoutes);
 app.use("/image", assetsRoutes);
 app.use("/user", userRoutes);
 app.use("/color", colorRoutes);
