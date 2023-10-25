@@ -11,5 +11,6 @@ api.post("/login", userController.login);
 api.get("/info", ensureAuth, userController.getInfo);
 api.post("/ecommerce-account", userController.createEcommerceAccount);
 api.post("/update-stores", userController.updateStores);
+api.get("/get-user-by-id/:userId", userController.getUserById);
 
 module.exports = api;

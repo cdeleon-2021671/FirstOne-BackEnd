@@ -15,18 +15,27 @@ const createProducts = async (item, id) => {
     const product = {
       storeId: id,
       idProduct: item.id[0],
-      urlProduct: item.link[0],
-      name: convert(item.title[0]),
-      description: convert(item.description[0]),
-      price: item.price[0],
+      urlProduct: item.link && item.link[0],
+      name: item.title && convert(item.title[0]),
+      description: item.description && convert(item.description[0]),
+      price: item.price && item.price[0],
       salePrice: item["sale_price"] ? item["sale_price"][0] : "",
       saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
       saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
-      tags: item["product_type"].join(";").replace(/&gt/g, "").split(";"),
-      stock: item.availability[0],
+      tags:
+        item["product_type"] &&
+        item["product_type"].join(";").replace(/&gt/g, "").split(";"),
+      stock: item["product_type"] && item.availability[0],
       quantity: item.quantity ? item.quantity[0] : "",
-      image: item["image_link"][0],
+      image: item["image_link"] && item["image_link"][0],
     };
+    const keys = Object.keys(product);
+    let flag = false;
+    for (const key of keys) {
+      const value = product[key];
+      if (value == undefined || typeof value == undefined) flag = true;
+    }
+    if (flag) return;
     if (product.stock == "in_stock" || product.stock == "in stock")
       product.stock = "Disponible";
     if (product.stock == "out of stock" || product.stock == "out_of_stock")
@@ -49,7 +58,11 @@ const createProducts = async (item, id) => {
 // Add Products
 exports.addProducts = async (req, res) => {
   try {
-    const { xml, storeId } = req.body;
+    const { storeId } = req.body;
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res.status(404).send({ message: "Tienda no encontrada" });
+    const { xml } = store;
     // Convertir xml
     const { data } = await axios.get(`${xml}`);
     const parser = new xml2js.Parser({
@@ -65,6 +78,8 @@ exports.addProducts = async (req, res) => {
       if (product) continue;
       createProducts(element, storeId);
     }
+    // Activar tienda
+    await store.updateOne({ state: "ACTIVA" });
     return res.send({ message: "Products added successfully" });
   } catch (err) {
     console.log(err);
@@ -75,7 +90,13 @@ exports.addProducts = async (req, res) => {
 // Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const allProducts = await Product.find({}).populate("storeId");
+    let allProducts = await Product.find({}).populate({
+      path: "storeId",
+      match: {
+        state: "ACTIVA",
+      },
+    });
+    allProducts = allProducts.filter((item) => item.storeId != null);
     for (let i = allProducts.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [allProducts[i], allProducts[j]] = [allProducts[j], allProducts[i]];
@@ -90,9 +111,15 @@ exports.getAllProducts = async (req, res) => {
 // Get Most Viewd
 exports.getMostViewed = async (req, res) => {
   try {
-    const products = await Product.find({})
-      .populate("storeId")
-      .sort({ view: "desc" });
+    let products = await Product.find({})
+      .populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      })
+      .sort({ views: "desc" });
+    products = products.filter((item) => item.storeId != null);
     return res.send({ products });
   } catch (err) {
     console.log(err);
@@ -103,7 +130,7 @@ exports.getMostViewed = async (req, res) => {
 // Get offers
 exports.getAllOffers = async (req, res) => {
   try {
-    const allOffers = await Product.find({
+    let allOffers = await Product.find({
       $or: [
         { salePrice: { $gt: 0 } },
         {
@@ -112,7 +139,13 @@ exports.getAllOffers = async (req, res) => {
           },
         },
       ],
-    }).populate("storeId");
+    }).populate({
+      path: "storeId",
+      match: {
+        state: "ACTIVA",
+      },
+    });
+    allOffers = allOffers.filter((item) => item.storeId != null);
     for (let i = allOffers.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [allOffers[i], allOffers[j]] = [allOffers[j], allOffers[i]];
@@ -161,7 +194,13 @@ exports.getSimilarProducts = async (req, res) => {
           $in: new RegExp(element, "i"),
         },
         storeId: storeId,
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      tags = tags.filter((item) => item.storeId != null);
       products.push(tags);
     }
     for (const element of tags) {
@@ -170,7 +209,13 @@ exports.getSimilarProducts = async (req, res) => {
           $in: new RegExp(element, "i"),
         },
         storeId: storeId,
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      tags = tags.filter((item) => item.storeId != null);
       products.push(tags);
     }
     const result = [];
@@ -186,9 +231,17 @@ exports.getSimilarProducts = async (req, res) => {
       }
     }
     if (result.length < 40) {
-      const products = await Product.find({ storeId: storeId })
-        .populate("storeId")
+      let products = await Product.find({
+        storeId: storeId,
+      })
+        .populate({
+          path: "storeId",
+          match: {
+            state: "ACTIVA",
+          },
+        })
         .sort({ view: "desc" });
+      products = products.filter((item) => item.storeId != null);
       result.push(...products);
     }
     const toRemove = [];
@@ -224,7 +277,13 @@ exports.getProductsByTag = async (req, res) => {
           },
           { salePrice: { $gt: 0 } },
         ],
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      products = products.filter((item) => item.storeId != null);
     } else {
       products = await Product.find({
         $or: [
@@ -235,7 +294,13 @@ exports.getProductsByTag = async (req, res) => {
             },
           },
         ],
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      products = products.filter((item) => item.storeId != null);
     }
     return res.send({ products });
   } catch (err) {
@@ -246,8 +311,16 @@ exports.getProductsByTag = async (req, res) => {
 // Enviar opciones de autocompletado
 exports.getAutoComplete = async (req, res) => {
   try {
-    const products = await Product.find().select("name tags");
-    const stores = await Store.find({state: 'ACTIVO'}).select("name");
+    let products = await Product.find({})
+      .select("name tags")
+      .populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+    products = products.filter((item) => item.storeId != null);
+    const stores = await Store.find({ state: "ACTIVA" }).select("name");
     const tags = products.reduce((acc, item) => {
       const innerArr = item.tags;
       innerArr.forEach((innerItem) => {
@@ -270,7 +343,13 @@ exports.getAutoComplete = async (req, res) => {
 // Traer todas las etiquetas sin repetir
 const getTags = async () => {
   try {
-    const allProducts = await Product.find({});
+    let allProducts = await Product.find().populate({
+      path: "storeId",
+      match: {
+        state: "ACTIVA",
+      },
+    });
+    allProducts = allProducts.filter(item => item.storeId != null)
     const allTags = [];
     allProducts.forEach((item) => {
       item.tags.forEach((e) => {
@@ -295,7 +374,7 @@ exports.getProductsOfTags = async (req, res) => {
     const tags = await getTags();
     let allProducts = await Promise.all(
       tags.map(async (item) => {
-        const elements = await Product.find({
+        let elements = await Product.find({
           $or: [
             { name: new RegExp(item, "i") },
             {
@@ -304,7 +383,13 @@ exports.getProductsOfTags = async (req, res) => {
               },
             },
           ],
-        }).populate("storeId");
+        }).populate({
+          path: "storeId",
+          match: {
+            state: "ACTIVA",
+          },
+        });
+        elements = elements.filter(item => item.storeId != null)
         return { tag: item, products: elements };
       })
     );
@@ -341,5 +426,21 @@ exports.getProductsOfTags = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting tags" });
+  }
+};
+
+exports.updateView = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await Product.findOne({ _id: productId });
+    if (!product)
+      return res.status(404).send({ message: "Producto no encontrado" });
+    const { views } = product;
+    const addView = parseInt(views) + 1;
+    await product.updateOne({ views: addView });
+    return res.send({ message: "View added successfully" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating views" });
   }
 };

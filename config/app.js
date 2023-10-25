@@ -25,6 +25,17 @@ const userController = require("../src/user/user.controller");
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+// validar que solo tienda.gt pueda acceder
+const allowedOrigins = ['https://tienda.gt', 'https://www.tienda.gt'];
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Dominio no permitido por CORS'));
+    }
+  },
+};
 // Utilizar las dependencias
 app.use(cors()); // Para poder utilizar otros puertos externos (front)
 app.use(helmet()); // Para proteger el proyecto de vulnerabilidades

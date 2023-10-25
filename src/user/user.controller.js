@@ -91,6 +91,21 @@ exports.updateStores = async (req, res) => {
   }
 };
 
+exports.getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findOne({ _id: userId }, { password: 0, rol: 0}).populate(
+      "stores.storeId"
+    );
+    if (!user)
+      return res.status(404).send({ message: "Usuario no encontrado" });
+    return res.send({ user });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting user" });
+  }
+};
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,

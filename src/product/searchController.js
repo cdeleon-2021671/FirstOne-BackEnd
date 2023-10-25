@@ -34,12 +34,18 @@ const getOffers = async (search) => {
       const mySearch = search.toLowerCase();
       const offerWord = item.toLowerCase();
       if (offerWord.includes(mySearch)) {
-        const offers = await Product.find({
+        let offers = await Product.find({
           $or: [
             { tags: { $in: new RegExp(search, "i") } },
             { salePrice: { $gt: 0 } },
           ],
-        }).populate("storeId");
+        }).populate({
+          path: "storeId",
+          match: {
+            state: "ACTIVA",
+          },
+        });
+        offers = offers.filter(item => item.storeId != null)
         result.push(offers);
         break;
       }
@@ -56,9 +62,15 @@ const searchByName = async (combinations) => {
     const response = [];
     for (const element of combinations) {
       const search = element.join(" ");
-      const products = await Product.find({
+      let products = await Product.find({
         name: new RegExp(search, "i"),
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      products = products.filter(item => item.storeId != null)
       response.push(...products);
     }
     return response;
@@ -72,12 +84,18 @@ const searchByDescription = async (combinations) => {
     const response = [];
     for (const element of combinations) {
       const regex = "^(?=.*\\b" + element.join("\\b)(?=.*\\b") + "\\b)";
-      const products = await Product.find({
+      let products = await Product.find({
         description: {
           $regex: regex,
           $options: "i",
         },
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      products = products.filter(item => item.storeId != null)
       response.push(...products);
     }
     return response;
@@ -90,11 +108,17 @@ const searchByTag = async (combinations) => {
   try {
     const response = [];
     for (const element of combinations) {
-      const products = await Product.find({
+      let products = await Product.find({
         tags: {
           $all: new RegExp(element, "i"),
         },
-      }).populate("storeId");
+      }).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      products = products.filter(item => item.storeId != null)
       response.push(...products);
     }
     return response;
@@ -105,7 +129,13 @@ const searchByTag = async (combinations) => {
 
 const fyzzySearchProducts = async (combinations) => {
   try {
-    const products = await Product.find().populate("storeId");
+    let products = await Product.find({}).populate({
+      path: "storeId",
+      match: {
+        state: "ACTIVA",
+      },
+    });
+    products = products.filter(item => item.storeId != null)
     const fuse = new Fuse(products, {
       ignoreLocation: true,
       distance: 0,
@@ -126,7 +156,9 @@ const fyzzySearchProducts = async (combinations) => {
 };
 
 const fuzzySearchStores = async (search) => {
-  const stores = await Store.find({});
+  const stores = await Store.find({
+    state: "ACTIVA",
+  });
   const fuse = new Fuse(stores, {
     ignoreLocation: true,
     distance: 0,

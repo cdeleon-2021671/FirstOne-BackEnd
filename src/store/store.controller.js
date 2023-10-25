@@ -3,6 +3,7 @@
 
 const Store = require("./store.model"); // Traer el modelo Store
 const Product = require("../product/product.model");
+const User = require("../user/user.model");
 
 // Add Store
 exports.addStore = async (req, res) => {
@@ -133,6 +134,13 @@ exports.deleteStore = async (req, res) => {
       return res.status(404).send({ message: "Store not found" });
     // Eliminar los productos de la db
     await Product.deleteMany({ storeId: storeId });
+    // Eliminar la tienda del usuario
+    const user = await User.findOne(
+      { "stores.storeId": storeId },
+      { password: 0 }
+    );
+    const stores = user.stores.filter((item) => item.storeId != storeId);
+    await user.updateOne({ stores: stores });
     // Eliminar la tienda de la db
     await Store.findOneAndDelete({ _id: storeId });
     return res.send({ message: "Store deleted successfully" });
@@ -145,7 +153,7 @@ exports.deleteStore = async (req, res) => {
 // Get Stores
 exports.getStores = async (req, res) => {
   try {
-    const allStores = await Store.find({ state: "ACTIVE" });
+    const allStores = await Store.find({ state: "ACTIVA" });
     const stores = [];
     for (const element of allStores) {
       const products = await Product.find({ storeId: element._id });
@@ -155,5 +163,31 @@ exports.getStores = async (req, res) => {
     return res.send({ stores });
   } catch (err) {
     console.log(err);
+  }
+};
+
+// Get all Stores
+exports.getAllStores = async (req, res) => {
+  try {
+    const stores = await Store.find({});
+    return res.send({ stores });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting stores" });
+  }
+};
+
+// Inactivar tienda
+exports.inactiveStore = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res.status(404).send({ message: "Tienda no encontrada" });
+    await store.updateOne({ state: "INACTIVA" });
+    return res.send({ message: "Tienda inactivada" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating store" });
   }
 };
