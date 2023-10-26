@@ -45,7 +45,7 @@ const getOffers = async (search) => {
             state: "ACTIVA",
           },
         });
-        offers = offers.filter(item => item.storeId != null)
+        offers = offers.filter((item) => item.storeId != null);
         result.push(offers);
         break;
       }
@@ -61,31 +61,9 @@ const searchByName = async (combinations) => {
   try {
     const response = [];
     for (const element of combinations) {
-      const search = element.join(" ");
-      let products = await Product.find({
-        name: new RegExp(search, "i"),
-      }).populate({
-        path: "storeId",
-        match: {
-          state: "ACTIVA",
-        },
-      });
-      products = products.filter(item => item.storeId != null)
-      response.push(...products);
-    }
-    return response;
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-const searchByDescription = async (combinations) => {
-  try {
-    const response = [];
-    for (const element of combinations) {
       const regex = "^(?=.*\\b" + element.join("\\b)(?=.*\\b") + "\\b)";
       let products = await Product.find({
-        description: {
+        name: {
           $regex: regex,
           $options: "i",
         },
@@ -95,7 +73,7 @@ const searchByDescription = async (combinations) => {
           state: "ACTIVA",
         },
       });
-      products = products.filter(item => item.storeId != null)
+      products = products.filter((item) => item.storeId != null);
       response.push(...products);
     }
     return response;
@@ -104,24 +82,26 @@ const searchByDescription = async (combinations) => {
   }
 };
 
-const searchByTag = async (combinations) => {
+const getAllProducts = async (combinations) => {
   try {
-    const response = [];
+    const result = [];
     for (const element of combinations) {
+      const regex = "^(?=.*\\b" + element.join("\\b)(?=.*\\b") + "\\b)";
       let products = await Product.find({
-        tags: {
-          $all: new RegExp(element, "i"),
-        },
+        $or: [
+          { description: { $regex: regex, $options: "i" } },
+          { tags: { $elemMatch: { $regex: regex, $options: "i" } } },
+        ],
       }).populate({
         path: "storeId",
         match: {
           state: "ACTIVA",
         },
       });
-      products = products.filter(item => item.storeId != null)
-      response.push(...products);
+      products = products.filter((item) => item.storeId != null);
+      result.push(...products);
     }
-    return response;
+    return result;
   } catch (err) {
     console.log(err);
   }
@@ -135,7 +115,7 @@ const fyzzySearchProducts = async (combinations) => {
         state: "ACTIVA",
       },
     });
-    products = products.filter(item => item.storeId != null)
+    products = products.filter((item) => item.storeId != null);
     const fuse = new Fuse(products, {
       ignoreLocation: true,
       distance: 0,
@@ -194,12 +174,11 @@ exports.searchProducts = async (req, res) => {
     const newSearch = cleanSearch(search);
     const combinations = combineNumbers(newSearch);
     const byOffer = await getOffers(search);
+    const allProducts = await getAllProducts(combinations);
     const byName = await searchByName(combinations);
-    const byDescription = await searchByDescription(combinations);
-    const byTags = await searchByTag(combinations);
     const fuzzy = await fyzzySearchProducts(combinations);
     const stores = await fuzzySearchStores(search);
-    const flag = byOffer.concat(byName).concat(byDescription).concat(byTags);
+    const flag = byOffer.concat(byName).concat(allProducts);
     const fullProducts = flag.filter((item) => item.length != 0);
     let result = orderProducts(fullProducts);
     if (result.length == 0) result = fuzzy;
