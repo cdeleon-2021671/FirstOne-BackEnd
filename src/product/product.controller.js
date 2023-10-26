@@ -153,6 +153,36 @@ exports.getAllOffers = async (req, res) => {
   }
 };
 
+// Get trending 48 hours
+exports.getTrending = async (req, res) => {
+  try {
+    const info = req.body;
+    const data = info.map((item) => {
+      const { storeId, idProduct } = item;
+      const product = {
+        storeId: storeId,
+        idProduct: idProduct,
+      };
+      return product;
+    });
+    const result = [];
+    for (const element of data) {
+      let product = await Product.findOne(element).populate({
+        path: "storeId",
+        match: {
+          state: "ACTIVA",
+        },
+      });
+      if (product.storeId == null) continue;
+      result.push(product);
+    }
+    return res.send({ result });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error gettign offers" });
+  }
+};
+
 // Get product by id
 exports.getProductById = async (req, res) => {
   try {
