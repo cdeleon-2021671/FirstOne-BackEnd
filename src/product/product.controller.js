@@ -146,10 +146,6 @@ exports.getAllOffers = async (req, res) => {
       },
     });
     allOffers = allOffers.filter((item) => item.storeId != null);
-    for (let i = allOffers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allOffers[i], allOffers[j]] = [allOffers[j], allOffers[i]];
-    }
     return res.send({ allOffers });
   } catch (err) {
     console.log(err);
