@@ -10,7 +10,7 @@ const { stripPrefix } = require("xml2js").processors;
 const xml2js = require("xml2js");
 const axios = require("axios");
 
-const createProducts = async (item, id) => {
+exports.createProducts = async (item, id) => {
   try {
     const product = {
       storeId: id,
@@ -76,7 +76,7 @@ exports.addProducts = async (req, res) => {
     for (const element of item) {
       const product = await Product.findOne({ idProduct: element.id[0] });
       if (product) continue;
-      createProducts(element, storeId);
+      this.createProducts(element, storeId);
     }
     // Activar tienda
     await store.updateOne({ state: "ACTIVA" });
@@ -349,7 +349,7 @@ const getTags = async () => {
         state: "ACTIVA",
       },
     });
-    allProducts = allProducts.filter(item => item.storeId != null)
+    allProducts = allProducts.filter((item) => item.storeId != null);
     const allTags = [];
     allProducts.forEach((item) => {
       item.tags.forEach((e) => {
@@ -389,7 +389,7 @@ exports.getProductsOfTags = async (req, res) => {
             state: "ACTIVA",
           },
         });
-        elements = elements.filter(item => item.storeId != null)
+        elements = elements.filter((item) => item.storeId != null);
         return { tag: item, products: elements };
       })
     );

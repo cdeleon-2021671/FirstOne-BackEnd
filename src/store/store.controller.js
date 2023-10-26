@@ -42,7 +42,7 @@ exports.updateTags = async (req, res) => {
   try {
     const { items, storeId } = req.body;
     const tags = items.map((item) => item.category);
-    const store = await Store.findOne({ _id: storeId });
+    const store = await Store.findOne({ _id: storeId, state: 'ACTIVA' });
     if (!store)
       return res
         .status(404)
@@ -63,7 +63,7 @@ exports.updateTags = async (req, res) => {
 exports.updateShippingTerms = async (req, res) => {
   try {
     const { shipping, storeId } = req.body;
-    const store = await Store.findOne({ _id: storeId });
+    const store = await Store.findOne({ _id: storeId, state: 'ACTIVA' });
     if (!store)
       return res
         .status(404)
@@ -95,7 +95,7 @@ exports.updateShippingTerms = async (req, res) => {
 exports.updatePaymentsOptions = async (req, res) => {
   try {
     const { payments, storeId } = req.body;
-    const store = await Store.findOne({ _id: storeId });
+    const store = await Store.findOne({ _id: storeId, state: 'ACTIVA' });
     if (!store)
       return res
         .status(404)

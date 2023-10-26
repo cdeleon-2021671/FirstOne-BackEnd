@@ -17,6 +17,7 @@ const productRoutes = require("../src/product/product.routes");
 const assetsRoutes = require("../src/assets/assets.routes");
 const userRoutes = require('../src/user/user.routes');
 const colorRoutes = require('../src/color/color.routes');
+const reloadRoutes = require('../src/reload/reload.routes');
 
 // Traer admin por defecto
 const userController = require("../src/user/user.controller");
@@ -37,7 +38,7 @@ const corsOptions = {
   },
 };
 // Utilizar las dependencias
-app.use(cors()); // Para poder utilizar otros puertos externos (front)
+app.use(cors(corsOptions)); // Para poder utilizar otros puertos externos (front)
 app.use(helmet()); // Para proteger el proyecto de vulnerabilidades
 app.use(morgan("dev")); // Herramienta de desarrollo
 
@@ -47,6 +48,7 @@ app.use("/product", productRoutes);
 app.use("/image", assetsRoutes);
 app.use("/user", userRoutes);
 app.use("/color", colorRoutes);
+app.use("/reload", reloadRoutes);
 
 // Funcion para iniciar el servidor en un puerto designado
 exports.initServer = async () => {
