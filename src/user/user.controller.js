@@ -52,7 +52,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.createEcommerceAccount = async (req, res) => {
+exports.createUser = async (req, res) => {
   try {
     const data = req.body;
     data.password = bcrypt.hashSync(data.password, 10);
@@ -94,12 +94,37 @@ exports.updateStores = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findOne({ _id: userId }, { password: 0, rol: 0}).populate(
-      "stores.storeId"
-    );
+    const user = await User.findOne(
+      { _id: userId },
+      { password: 0, rol: 0 }
+    ).populate("stores.storeId");
     if (!user)
       return res.status(404).send({ message: "Usuario no encontrado" });
     return res.send({ user });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting user" });
+  }
+};
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0 });
+    return res.send({ users });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error getting user" });
+  }
+};
+
+exports.getWorkers = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const users = await User.find(
+      { rol: "TRABAJADOR", stores: { $elemMatch: { storeId: storeId } } },
+      { password: 0 }
+    ).populate("stores.storeId"); 
+    return res.send({ users });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting user" });
