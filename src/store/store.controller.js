@@ -179,7 +179,25 @@ exports.getStores = async (req, res) => {
 exports.getAllStores = async (req, res) => {
   try {
     const stores = await Store.find({});
-    return res.send({ stores });
+    const allStores = [];
+    for (const element of stores) {
+      const { _id } = element;
+      const boss = await User.findOne({
+        stores: {
+          $elemMatch: { storeId: _id },
+        },
+      });
+      const { name, email } = boss;
+      const result = {
+        store: element,
+        boss: {
+          name: name,
+          email: email,
+        },
+      };
+      allStores.push(result);
+    }
+    return res.send({ allStores });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error getting stores" });

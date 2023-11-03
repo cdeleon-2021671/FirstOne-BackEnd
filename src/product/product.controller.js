@@ -149,7 +149,7 @@ exports.getAllOffers = async (req, res) => {
     return res.send({ allOffers });
   } catch (err) {
     console.log(err);
-    return res.status(500).send({ message: "Error gettign offers" });
+    return res.status(500).send({ message: "Error getting offers" });
   }
 };
 
@@ -179,7 +179,7 @@ exports.getTrending = async (req, res) => {
     return res.send({ result });
   } catch (err) {
     console.log(err);
-    return res.status(500).send({ message: "Error gettign offers" });
+    return res.status(500).send({ message: "Error getting trending" });
   }
 };
 
