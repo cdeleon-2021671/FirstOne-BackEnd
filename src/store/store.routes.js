@@ -13,6 +13,7 @@ const { ensureAuth } = require("../utils/validate");
 api.post("/add-store", storeController.addStore);
 api.delete("/delete-store/:storeId", ensureAuth, storeController.deleteStore);
 api.get("/get-stores", storeController.getStores);
+api.get("/get-store-by-id", storeController.getStoreById);
 api.get("/get-all-stores", storeController.getAllStores);
 api.put("/update-tags", storeController.updateTags);
 api.put("/update-shipping", storeController.updateShippingTerms);

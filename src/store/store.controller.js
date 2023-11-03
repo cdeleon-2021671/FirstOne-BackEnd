@@ -204,6 +204,20 @@ exports.getAllStores = async (req, res) => {
   }
 };
 
+// get store by id
+exports.getStoreById = async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const store = await Store.findOne({ _id: storeId });
+    if (!store)
+      return res.status(404).send({ message: "Tienda no encontrada" });
+    return res.send({ store });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({ message: "Error updating store" });
+  }
+};
+
 // Inactivar tienda
 exports.inactiveStore = async (req, res) => {
   try {
