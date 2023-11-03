@@ -15,9 +15,9 @@ let port = process.env.PORT || 3500;
 const storeRoutes = require("../src/store/store.routes");
 const productRoutes = require("../src/product/product.routes");
 const assetsRoutes = require("../src/assets/assets.routes");
-const userRoutes = require('../src/user/user.routes');
-const colorRoutes = require('../src/color/color.routes');
-const reloadRoutes = require('../src/reload/reload.routes');
+const userRoutes = require("../src/user/user.routes");
+const colorRoutes = require("../src/color/color.routes");
+const reloadRoutes = require("../src/reload/reload.routes");
 
 // Traer admin por defecto
 const userController = require("../src/user/user.controller");
@@ -27,13 +27,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // validar que solo tienda.gt pueda acceder
-const allowedOrigins = ['https://tienda.gt', 'https://www.tienda.gt', 'http://localhost:5173'];
+const allowedOrigins = [
+  "https://tienda.gt",
+  "https://www.tienda.gt",
+  "http://localhost:5173",
+];
 const corsOptions = {
   origin: (origin, callback) => {
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
-      callback(new Error('Dominio no permitido por CORS'));
+      callback(new Error(`Dominio no permitido por CORS. Origen: ${origin}`));
     }
   },
 };
