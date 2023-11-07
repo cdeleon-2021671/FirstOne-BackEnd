@@ -103,7 +103,7 @@ exports.getUserById = async (req, res) => {
     const { userId } = req.params;
     const user = await User.findOne(
       { _id: userId },
-      { password: 0, rol: 0 }
+      { password: 0}
     ).populate("stores.storeId");
     if (!user)
       return res.status(404).send({ message: "Usuario no encontrado" });
