@@ -7,6 +7,10 @@ const userSchema = mongoose.Schema({
   email: String,
   password: String,
   rol: String,
+  boss: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   stores: [
     {
       storeId: {

@@ -84,6 +84,13 @@ exports.updateStores = async (req, res) => {
     await user.updateOne({
       $push: { stores: { storeId: storeId } },
     });
+    await User.updateMany(
+      { boss: user._id },
+      {
+        $push: { stores: { storeId: storeId } },
+      },
+      { new: true }
+    );
     return res.send({ message: "Tienda agregada satisfactoriamente" });
   } catch (err) {
     console.log(err);
@@ -119,11 +126,11 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getWorkers = async (req, res) => {
   try {
-    const { storeId } = req.params;
+    const { bossId } = req.params;
     const users = await User.find(
-      { rol: "TRABAJADOR", stores: { $elemMatch: { storeId: storeId } } },
+      { rol: "TRABAJADOR", boss: bossId },
       { password: 0 }
-    ).populate("stores.storeId"); 
+    ).populate("stores.storeId");
     return res.send({ users });
   } catch (err) {
     console.log(err);
