@@ -145,8 +145,7 @@ exports.deleteStore = async (req, res) => {
     await Product.deleteMany({ storeId: storeId });
     // Eliminar la tienda del usuario
     const user = await User.findOne(
-      { rol: "COMERCIANTE" },
-      { "stores.storeId": storeId },
+      { rol: "COMERCIANTE", "stores.storeId": storeId },
       { password: 0 }
     );
     const stores = user.stores.filter((item) => item.storeId != storeId);
@@ -183,16 +182,22 @@ exports.getStores = async (req, res) => {
 // Get all Stores
 exports.getAllStores = async (req, res) => {
   try {
+    // Traer todas las tiendas
     const stores = await Store.find({});
+    // Nuevo arreglo para guardar las tiendas con los jefes
     const allStores = [];
+    // Recorrer las tiendas
     for (const element of stores) {
+      // Extraer el id de cada tienda
       const { _id } = element;
+      // Obtener el jefe de esa tienda
       const boss = await User.findOne({
-        stores: {
-          $elemMatch: { storeId: _id },
-        },
+        rol: "COMERCIANTE",
+        "stores.storeId": _id,
       });
+      // Obtener el nombre y correo del jefe
       const { name, email } = boss;
+      // Crear el objeto de tienda
       const result = {
         store: element,
         boss: {
@@ -200,6 +205,7 @@ exports.getAllStores = async (req, res) => {
           email: email,
         },
       };
+      // Agregar el objeto al arreglo
       allStores.push(result);
     }
     return res.send({ allStores });
