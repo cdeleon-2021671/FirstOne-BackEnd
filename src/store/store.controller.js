@@ -145,11 +145,16 @@ exports.deleteStore = async (req, res) => {
     await Product.deleteMany({ storeId: storeId });
     // Eliminar la tienda del usuario
     const user = await User.findOne(
+      { rol: "COMERCIANTE" },
       { "stores.storeId": storeId },
       { password: 0 }
     );
     const stores = user.stores.filter((item) => item.storeId != storeId);
-    await user.updateOne({ stores: stores });
+    await User.updateMany(
+      { "stores.storeId": storeId },
+      { stores: stores },
+      { new: true }
+    );
     // Eliminar la tienda de la db
     await Store.findOneAndDelete({ _id: storeId });
     return res.send({ message: "Store deleted successfully" });
