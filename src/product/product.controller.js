@@ -173,7 +173,7 @@ exports.getTrending = async (req, res) => {
           state: "ACTIVA",
         },
       });
-      if (product && product.storeId == null) continue;
+      if (!product || product.storeId == null) continue;
       result.push(product);
     }
     return res.send({ result });
