@@ -145,7 +145,8 @@ const fuzzySearchStores = async (search) => {
     threshold: 0.0,
     keys: ["name"],
   });
-  const filters = Array.from(fuse.search(search));
+  const newSearch = search.replace(/[-]+/g, " ");
+  const filters = Array.from(fuse.search(newSearch));
   const result = filters.map(({ item }) => item);
   const response = [];
   for (const element of result) {
@@ -181,8 +182,9 @@ exports.searchProducts = async (req, res) => {
     const flag = byOffer.concat(byName).concat(allProducts);
     const fullProducts = flag.filter((item) => item.length != 0);
     let result = orderProducts(fullProducts);
+    const isValid = result.length;
     if (result.length == 0) result = fuzzy;
-    return res.send({ result: result, stores: stores });
+    return res.send({ result: result, stores: stores, valid: isValid });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error searching products" });
