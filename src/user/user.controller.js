@@ -68,12 +68,10 @@ exports.createUser = async (req, res) => {
 
 exports.updateStores = async (req, res) => {
   try {
-    const { register, email, storeId } = req.body;
-    let account = email;
-    if (register) {
-      const { email } = jwt.decode(register, `${process.env.SECRET_KEY}`);
-      account = email;
-    }
+    const { register, storeId } = req.body;
+    let token;
+    if (register) token = jwt.decode(register, `${process.env.SECRET_KEY}`);
+    const account = token.email;
     const user = await User.findOne({ email: account });
     if (!user) return res.status(404).send({ message: "Cuenta no encontrada" });
     await user.updateOne({
