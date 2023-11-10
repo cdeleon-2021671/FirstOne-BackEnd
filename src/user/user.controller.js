@@ -57,14 +57,9 @@ exports.createUser = async (req, res) => {
     const data = req.body;
     data.password = bcrypt.hashSync(data.password, 10);
     const newUser = new User(data);
-    const payload = {
-      email: data.email,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 60 * 60,
-    };
-    const register = jwt.sign(payload, `${process.env.SECRET_KEY}`);
     await newUser.save();
-    return res.send({ message: "User created successfully", register });
+    const token = await createToken(newUser);
+    return res.send({ token });
   } catch (err) {
     console.log(err);
     return res.status(500).send({ message: "Error creating account" });
@@ -101,10 +96,9 @@ exports.updateStores = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findOne(
-      { _id: userId },
-      { password: 0}
-    ).populate("stores.storeId");
+    const user = await User.findOne({ _id: userId }, { password: 0 }).populate(
+      "stores.storeId"
+    );
     if (!user)
       return res.status(404).send({ message: "Usuario no encontrado" });
     return res.send({ user });
@@ -155,7 +149,7 @@ exports.sendMail = async (req, res) => {
     const user = await User.findOne({ email: email });
     if (user)
       return res.status(400).send({ message: "Cuenta con correo existente" });
-    if (email == undefined || email == "" || email == " ")
+    if (email == undefined || email == "")
       return res.status(400).send({ message: "Email is required" });
     await transporter.sendMail({
       from: "Tienda.gt <tienda.gt@gmail.com>", // sender address
