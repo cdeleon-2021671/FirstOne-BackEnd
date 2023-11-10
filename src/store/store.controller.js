@@ -74,8 +74,10 @@ exports.getStores = async (req, res) => {
     const allStores = await Store.find({ state: "ACTIVA" });
     const stores = [];
     for (const element of allStores) {
-      const products = await Product.find({ storeId: element._id });
-      const store = { store: element, products: products.length };
+      const products = await Product.find({ storeId: element._id }).sort({
+        views: "desc",
+      });
+      const store = { store: element, products: products };
       stores.push(store);
     }
     return res.send({ stores });
