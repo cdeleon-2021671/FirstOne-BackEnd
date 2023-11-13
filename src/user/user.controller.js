@@ -19,10 +19,11 @@ exports.adminDefault = async () => {
   try {
     const adminDefault = {
       name: "Admin Default",
-      email: "admin",
-      password: "admin",
+      email: "quetzalcoatl",
+      password: "yfc9HNR!mjg!yng1tac",
       rol: "MAESTRO",
-      state: "ACTIVE",
+      boss: null,
+      stores: [],
     };
     const adminExists = await User.findOne({ email: "admin" }, { password: 0 });
     if (adminExists) return console.log("Admin already exists");
