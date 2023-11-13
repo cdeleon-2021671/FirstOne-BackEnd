@@ -25,7 +25,7 @@ exports.adminDefault = async () => {
       boss: null,
       stores: [],
     };
-    const adminExists = await User.findOne({ email: "admin" }, { password: 0 });
+    const adminExists = await User.findOne({ email: "quetzalcoatl" }, { password: 0 });
     if (adminExists) return console.log("Admin already exists");
     adminDefault.password = bcrypt.hashSync(adminDefault.password, 10);
     const newAdmin = new User(adminDefault);
