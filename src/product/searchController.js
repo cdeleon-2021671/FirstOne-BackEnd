@@ -151,7 +151,7 @@ const fuzzySearchStores = async (search) => {
   const response = [];
   for (const element of result) {
     const products = await Product.find({ storeId: element._id });
-    response.push({ store: element, products: products.length });
+    response.push({ store: element, products: products });
   }
   return response;
 };
