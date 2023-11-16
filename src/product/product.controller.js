@@ -15,10 +15,10 @@ exports.createProducts = async (item, id) => {
     const product = {
       storeId: id,
       idProduct: item.id[0],
-      urlProduct: item.link && item.link[0],
-      name: item.title && convert(item.title[0]),
-      description: item.description && convert(item.description[0]),
-      price: item.price && item.price[0],
+      urlProduct: item.link ? item.link[0] : '',
+      name: item.title ? convert(item.title[0]) : '',
+      description: item.description ? convert(item.description[0]) : '',
+      price: item.price ? item.price[0] : 0,
       salePrice: item["sale_price"] ? item["sale_price"][0] : "",
       saleEndDate: item["sale_end_date"] ? item["sale_end_date"][0] : "",
       saleStartDate: item["sale_start_date"] ? item["sale_start_date"][0] : "",
@@ -27,15 +27,8 @@ exports.createProducts = async (item, id) => {
         item["product_type"].join(";").replace(/&gt/g, "").split(";"),
       stock: item["product_type"] && item.availability[0],
       quantity: item.quantity ? item.quantity[0] : "",
-      image: item["image_link"] && item["image_link"][0],
+      image: item["image_link"] ? item["image_link"][0] : '',
     };
-    const keys = Object.keys(product);
-    let flag = false;
-    for (const key of keys) {
-      const value = product[key];
-      if (value == undefined || typeof value == undefined) flag = true;
-    }
-    if (flag) return;
     if (product.stock == "in_stock" || product.stock == "in stock")
       product.stock = "Disponible";
     if (product.stock == "out of stock" || product.stock == "out_of_stock")
