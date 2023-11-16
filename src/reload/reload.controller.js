@@ -36,7 +36,7 @@ const addProducts = async (xml, storeId) => {
   try {
     for (const item of xml) {
       const sku = item.id && item.id[0];
-      const product = await Product.findOne({ idProduct: sku });
+      const product = await Product.findOne({ idProduct: sku, storeId: storeId });
       if (product) continue;
       createProducts(item, storeId);
     }
@@ -46,7 +46,7 @@ const addProducts = async (xml, storeId) => {
 };
 
 // Actualizar productos que esten en xml y base de datos
-const updateProducts = async (xml) => {
+const updateProducts = async (xml, storeId) => {
   try {
     for (const item of xml) {
       const product = {
@@ -87,7 +87,7 @@ const updateProducts = async (xml) => {
       }
       product.tags = product.tags.map((item) => item.trim());
       await Product.findOneAndUpdate(
-        { idProduct: product.idProduct },
+        { idProduct: product.idProduct, storeId: storeId },
         product,
         {
           new: true,
@@ -132,7 +132,7 @@ const updateStores = async () => {
       const data = { storeId: store.storeId, xml: store.xml };
       const xml = await getProducts(store.xml);
       deleteProducts(xml, store.storeId);
-      updateProducts(xml);
+      updateProducts(xml, store.storeId);
       addProducts(xml, store.storeId);
       await Reload.findOneAndDelete(data);
     }
