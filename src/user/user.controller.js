@@ -25,7 +25,10 @@ exports.adminDefault = async () => {
       boss: null,
       stores: [],
     };
-    const adminExists = await User.findOne({ email: "quetzalcoatl" }, { password: 0 });
+    const adminExists = await User.findOne(
+      { email: "quetzalcoatl" },
+      { password: 0 }
+    );
     if (adminExists) return console.log("Admin already exists");
     adminDefault.password = bcrypt.hashSync(adminDefault.password, 10);
     const newAdmin = new User(adminDefault);
@@ -56,6 +59,9 @@ exports.login = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const data = req.body;
+    const user = await User.findOne({ email: data.email });
+    if (user)
+      return res.status(400).send({ message: "El correo ya existente" });
     data.password = bcrypt.hashSync(data.password, 10);
     const newUser = new User(data);
     await newUser.save();
