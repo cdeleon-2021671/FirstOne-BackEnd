@@ -381,15 +381,27 @@ const getTags = async () => {
     allProducts = allProducts.filter((item) => item.storeId != null);
     const allTags = [];
     allProducts.forEach((item) => {
-      item.tags.forEach((e) => {
+      const { storeId, tags } = item;
+      tags.forEach((e) => {
         const name = e.trim();
-        const result = name.replace("#", "");
-        allTags.push(result);
+        const result = name.replace(/[#]+/g, "");
+        allTags.push({ category: result, store: storeId._id });
       });
     });
-    const newAllTags = allTags.filter((item) => item != "Home");
-    const result = Array.from(new Set(newAllTags));
-    return result;
+    const result = [];
+    for (const item of allTags) {
+      let flag = false;
+      for (const element of result) {
+        const { category, store } = item;
+        if (category != element.category) continue;
+        if (store != element.store) continue;
+        flag = true;
+        break;
+      }
+      if (!flag) result.push(item);
+    }
+    const response = result.map(({ category }) => category);;
+    return response;
   } catch (err) {
     console.log(err);
     return console.log("Error getting tags");
