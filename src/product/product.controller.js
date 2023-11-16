@@ -400,8 +400,7 @@ const getTags = async () => {
       }
       if (!flag) result.push(item);
     }
-    const response = result.map(({ category }) => category);;
-    return response;
+    return result;
   } catch (err) {
     console.log(err);
     return console.log("Error getting tags");
@@ -417,11 +416,12 @@ exports.getProductsOfTags = async (req, res) => {
       tags.map(async (item) => {
         let elements = await Product.find({
           $or: [
-            { name: new RegExp(item, "i") },
+            { name: new RegExp(item.category, "i"), storeId: item.store },
             {
               tags: {
-                $in: new RegExp(item, "i"),
+                $in: new RegExp(item.category, "i"),
               },
+              storeId: item.store,
             },
           ],
         }).populate({
@@ -431,38 +431,29 @@ exports.getProductsOfTags = async (req, res) => {
           },
         });
         elements = elements.filter((item) => item.storeId != null);
-        return { tag: item, products: elements };
+        return { tag: item.category, products: elements };
       })
     );
     const result = [];
     for (const key1 in allProducts) {
       for (const key2 in allProducts[key1].products) {
-        if (result.length != 0) {
-          let repeat = 0;
-          for (const product of result) {
-            if (
-              product.product._id.toString() !==
-              allProducts[key1].products[key2]._id.toString()
-            )
-              repeat++;
-          }
-          if (repeat == result.length) {
-            result.push({
-              tag: tags[key1],
-              product: allProducts[key1].products[key2],
-            });
-            break;
-          }
-        } else {
+        let repeat = 0;
+        for (const product of result) {
+          if (
+            product.product._id.toString() !==
+            allProducts[key1].products[key2]._id.toString()
+          )
+            repeat++;
+        }
+        if (repeat == result.length) {
           result.push({
-            tag: tags[key1],
+            tag: tags[key1].category,
             product: allProducts[key1].products[key2],
           });
           break;
         }
       }
     }
-
     return res.send({ result });
   } catch (err) {
     console.log(err);
