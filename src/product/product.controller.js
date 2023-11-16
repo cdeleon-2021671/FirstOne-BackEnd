@@ -74,7 +74,10 @@ exports.addProducts = async (req, res) => {
     // Agregar los productos a la db
     const { item } = channel[0];
     for (const element of item) {
-      const product = await Product.findOne({ idProduct: element.id[0] });
+      const product = await Product.findOne({
+        idProduct: element.id[0],
+        storeId: storeId,
+      });
       if (product) continue;
       this.createProducts(element, storeId);
     }
