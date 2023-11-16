@@ -8,7 +8,6 @@ const mongoose = require("mongoose");
 const productSchema = mongoose.Schema({
   idProduct: {
     type: Number,
-    required: true,
   },
   storeId: {
     // ObjectId es decir que tiene que ser id
@@ -20,20 +19,15 @@ const productSchema = mongoose.Schema({
   urlProduct: {
     // Tipo de dato String, puede ser texto, numeros (como string), etc
     type: String,
-    // Es un dato requerido (no puede ir vacio, null o indefinido)
-    required: true,
   },
   name: {
     type: String,
-    required: true,
   },
   description: {
     type: String,
-    required: true,
   },
   price: {
     type: Number,
-    required: true,
   },
   // Tipo de dato numero, puede ser entero o con decimales
   salePrice: Number,
@@ -42,7 +36,6 @@ const productSchema = mongoose.Schema({
   tags: Array,
   stock: {
     type: String,
-    required: true,
   },
   quantity: Number,
   views: {
@@ -52,7 +45,6 @@ const productSchema = mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
   },
 });
 
