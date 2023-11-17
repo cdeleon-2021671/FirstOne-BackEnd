@@ -17,6 +17,7 @@ const productRoutes = require("../src/product/product.routes");
 const userRoutes = require("../src/user/user.routes");
 const colorRoutes = require("../src/color/color.routes");
 const reloadRoutes = require("../src/reload/reload.routes");
+const cacheRoutes = require("../src/cache/cache.routes");
 
 // Traer admin por defecto
 const userController = require("../src/user/user.controller");
@@ -51,6 +52,7 @@ app.use("/product", productRoutes);
 app.use("/user", userRoutes);
 app.use("/color", colorRoutes);
 app.use("/reload", reloadRoutes);
+app.use("/cache", cacheRoutes);
 
 // Funcion para iniciar el servidor en un puerto designado
 exports.initServer = async () => {
