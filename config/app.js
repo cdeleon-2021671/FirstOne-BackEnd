@@ -29,7 +29,6 @@ app.use(express.json());
 // validar que solo tienda.gt pueda acceder
 const allowedOrigins = [
   "https://tienda.gt",
-  "https://www.tienda.gt",
   "http://localhost:5173",
 ];
 const corsOptions = {
